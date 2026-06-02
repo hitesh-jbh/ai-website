@@ -7,6 +7,8 @@ import ResetPassword from './login/Reset';
 import Dashboard from './Home/Home';
 import SearchPage from './Search/Search';
 import ManageSubscriptions from './Subscription/Subscription';
+import Leaderboard from './Leaderboard/Leaderboard';
+import VaultsPage from './Vault/Vault';
 import './App.css';
 
 function App() {
@@ -25,6 +27,8 @@ function App() {
         <Route path="/register" element={<Register />} />
         <Route path="/reset-password" element={<ResetPassword />} />
         <Route path="/home" element={<Dashboard />} />
+          <Route path="/leaderboard" element={<Leaderboard />} />
+           <Route path="/vault" element={<VaultsPage />} />
         
           <Route 
           path="/search" 

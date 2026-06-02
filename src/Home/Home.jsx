@@ -44,7 +44,7 @@ const mockBackendData = {
 };
 
 export default function Dashboard() {
-    const navigate = useNavigate();
+  const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('Weekly');
   const [activeTab, setActiveTab] = useState('Home');
 
@@ -54,6 +54,12 @@ export default function Dashboard() {
   const earnersList = activeDataset.earners;
   
   const maxChartValue = Math.max(...chartData.map((d) => d.value), 1);
+
+  const handleTabNavigation = (tabName) => {
+    setActiveTab(tabName);
+    if (tabName === 'Leaderboard') navigate('/leaderboard');
+    if (tabName === 'Vaults') navigate('/vault');
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 pb-24 md:pb-12 relative overflow-hidden">
@@ -71,7 +77,7 @@ export default function Dashboard() {
           {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
             <button
               key={tab}
-              onClick={() => setActiveTab(tab)}
+              onClick={() => handleTabNavigation(tab)}
               className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
                 activeTab === tab ? 'bg-white text-slate-900 shadow-sm' : 'text-slate-500 hover:text-slate-900'
               }`}
@@ -108,17 +114,17 @@ export default function Dashboard() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60">
           <div className="flex-1 max-w-xl relative">
-      <input 
-        type="text"
-        readOnly
-        onClick={() => navigate('/search')} 
-        placeholder="Search workspaces, analytics, creators or vaults..."
-        className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none hover:bg-slate-50 transition-colors"
-      />
-      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="absolute left-4 top-3.5 h-4 w-4 stroke-slate-400">
-        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" />
-      </svg>
-    </div>
+            <input 
+              type="text"
+              readOnly
+              onClick={() => navigate('/search')} 
+              placeholder="Search workspaces, analytics, creators or vaults..."
+              className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none hover:bg-slate-50 transition-colors"
+            />
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="absolute left-4 top-3.5 h-4 w-4 stroke-slate-400">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" />
+            </svg>
+          </div>
 
           <div className="flex items-center gap-2 self-end md:self-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Timeframe:</span>
@@ -145,28 +151,34 @@ export default function Dashboard() {
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Active Creators</p>
               <p className="text-3xl font-black text-slate-900">{metrics.creators}</p>
             </div>
-            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg></div>
+            <div className="p-3 bg-blue-50 text-blue-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15 19.128a9.38 9.38 0 002.625.372 9.337 9.337 0 004.121-.952 4.125 4.125 0 00-7.533-2.493M15 19.128v-.003c0-1.113-.285-2.16-.786-3.07M15 19.128v.106A12.318 12.318 0 018.624 21c-2.331 0-4.512-.645-6.374-1.766l-.001-.109a6.375 6.375 0 0111.964-3.07M12 6.375a3.375 3.375 0 11-6.75 0 3.375 3.375 0 016.75 0zm8.25 2.25a2.625 2.625 0 11-5.25 0 2.625 2.625 0 015.25 0z" /></svg></div>
           </div>
-          <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60 flex items-center justify-between">
+          
+          {/* Main metric card redirecting directly to /vault */}
+          <div 
+            onClick={() => navigate('/vault')}
+            className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60 flex items-center justify-between cursor-pointer hover:border-slate-300 hover:shadow-md transition-all"
+          >
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Knowledge Vaults</p>
               <p className="text-3xl font-black text-slate-900">{metrics.vaults}</p>
             </div>
-            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></div>
+            <div className="p-3 bg-emerald-50 text-emerald-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" /></svg></div>
           </div>
+
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Global Queries</p>
               <p className="text-3xl font-black text-slate-900">{metrics.searches}</p>
             </div>
-            <div className="p-3 bg-violet-50 text-violet-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
+            <div className="p-3 bg-violet-50 text-violet-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M15.75 15.75l-2.489-2.489m0 0a3.375 3.375 0 10-4.773-4.773 3.375 3.375 0 004.774 4.774zM21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg></div>
           </div>
           <div className="bg-white p-5 rounded-2xl shadow-sm border border-slate-200/60 flex items-center justify-between">
             <div className="space-y-1">
               <p className="text-xs font-bold text-slate-400 uppercase tracking-wider">Gross Revenue</p>
               <p className="text-3xl font-black text-slate-900">{metrics.earnings}</p>
             </div>
-            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth="2" stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.214.107a3.783 3.783 0 005.422-3.136 3.783 3.783 0 00-5.422-3.136l-.428-.214a3.783 3.783 0 015.422-3.136l.214.107" /></svg></div>
+            <div className="p-3 bg-amber-50 text-amber-600 rounded-xl"><svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6"><path strokeLinecap="round" strokeLinejoin="round" d="M12 6v12m-3-2.818l.214.107a3.783 3.783 0 005.422-3.136 3.783 3.783 0 00-5.422-3.136l-.428-.214a3.783 3.783 0 015.422-3.136l.214.107" /></svg></div>
           </div>
         </div>
 
@@ -193,13 +205,13 @@ export default function Dashboard() {
                 
                 <div className="grid grid-cols-3 gap-3 pt-2">
                   {[
-                    { label: 'Create Vault', icon: 'M12 4.5v15m7.5-7.5h-15' },
-                    { label: 'Start Earning', icon: 'M12 6v12m-3-2.818l.214.107a3.783 3.783 0 005.422-3.136' },
-                    { label: 'Tutorials', icon: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z' }
+                    { label: 'Create Vault', icon: 'M12 4.5v15m7.5-7.5h-15', path: '/vault' },
+                    { label: 'Start Earning', icon: 'M12 6v12m-3-2.818l.214.107a3.783 3.783 0 005.422-3.136', path: '/search' },
+                    { label: 'Tutorials', icon: 'M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.348a1.125 1.125 0 010 1.971l-11.54 6.347a1.125 1.125 0 01-1.667-.985V5.653z', path: '/home' }
                   ].map((item) => (
                     <button 
                       key={item.label}
-                      onClick={() => alert(`Framework Triggered: ${item.label}`)}
+                      onClick={() => navigate(item.path)}
                       className="flex flex-col items-center justify-center gap-2 rounded-2xl bg-white/5 border border-white/10 p-4 text-center transition-all hover:bg-white/10 hover:border-white/20 hover:-translate-y-0.5 group"
                     >
                       <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-indigo-300 group-hover:text-white transition-colors">
@@ -289,7 +301,7 @@ export default function Dashboard() {
                 </div>
                 
                 <button 
-                  onClick={() => setActiveTab('Leaderboard')}
+                   onClick={() => navigate('/leaderboard')} 
                   className="text-xs font-bold text-blue-600 hover:text-blue-700 bg-blue-50 border border-blue-100 px-2.5 py-1.5 rounded-xl transition-all inline-flex items-center gap-1 hover:shadow-sm"
                 >
                   View All <span>&gt;</span>
@@ -325,18 +337,22 @@ export default function Dashboard() {
         </div>
       </main>
 
+      {/* Mobile navigation bottom bar containing correct routing metrics */}
       <div className="fixed bottom-0 inset-x-0 z-50 border-t border-slate-200 bg-white/90 backdrop-blur-md px-4 py-2 shadow-2xl md:hidden">
         <div className="flex items-center justify-around">
           {[
-            { id: 'Home', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
-            { id: 'Leaderboard', icon: 'M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0V16.5L12 3L3 16.5v2.25' },
-            { id: 'Vaults', icon: 'M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z' },
-            { id: 'Options', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5' }
+            { id: 'Home', path: '/home', icon: 'M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25' },
+            { id: 'Leaderboard', path: '/leaderboard', icon: 'M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0V16.5L12 3L3 16.5v2.25' },
+            { id: 'Vaults', path: '/vault', icon: 'M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z' },
+            { id: 'Options', path: '/home', icon: 'M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5' }
           ].map((item) => (
             <button 
               key={item.id}
-              onClick={() => setActiveTab(item.id)}
-              className={`flex flex-col items-center gap-0.5 p-2 transition-all ${activeTab === item.id ? 'text-blue-600 scale-105' : 'text-slate-400'}`}
+              onClick={() => {
+                setActiveTab(item.id);
+                navigate(item.path);
+              }}
+              className={`flex flex-col items-center gap-0.5 p-2 transition-all ${activeTab === item.id || (item.id === 'Vaults' && window.location.pathname === '/vault') ? 'text-blue-600 scale-105' : 'text-slate-400'}`}
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
                 <path strokeLinecap="round" strokeLinejoin="round" d={item.icon} />
