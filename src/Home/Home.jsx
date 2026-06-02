@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const mockBackendData = {
   Weekly: {
@@ -43,6 +44,7 @@ const mockBackendData = {
 };
 
 export default function Dashboard() {
+    const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('Weekly');
   const [activeTab, setActiveTab] = useState('Home');
 
@@ -106,17 +108,17 @@ export default function Dashboard() {
 
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white p-4 rounded-2xl shadow-sm border border-slate-200/60">
           <div className="flex-1 max-w-xl relative">
-            <input 
-              type="text"
-              readOnly
-              onClick={() => alert("Navigating to platform global search panel...")}
-              placeholder="Search workspaces, analytics, creators or vaults..."
-              className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none hover:bg-slate-50 transition-colors"
-            />
-            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="absolute left-4 top-3.5 h-4 w-4 stroke-slate-400">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" />
-            </svg>
-          </div>
+      <input 
+        type="text"
+        readOnly
+        onClick={() => navigate('/search')} 
+        placeholder="Search workspaces, analytics, creators or vaults..."
+        className="w-full cursor-pointer rounded-xl border border-slate-200 bg-slate-50/50 pl-11 pr-4 py-3 text-sm text-slate-800 placeholder-slate-400 focus:outline-none hover:bg-slate-50 transition-colors"
+      />
+      <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="absolute left-4 top-3.5 h-4 w-4 stroke-slate-400">
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" />
+      </svg>
+    </div>
 
           <div className="flex items-center gap-2 self-end md:self-auto">
             <span className="text-xs font-bold uppercase tracking-wider text-slate-400 mr-1">Timeframe:</span>
