@@ -1,11 +1,10 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { register as registerApi } from '../api/auth';
 import { setTokenPair } from '../auth/tokenStorage';
 
 export default function Register() {
   const navigate = useNavigate();
-  // 1. State management for easy backend integration
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -20,7 +19,6 @@ export default function Register() {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState('');
 
-  // Handle input updates dynamically
   const handleChange = (e) => {
     const { name, value, type, checked } = e.target;
     setFormData((prevState) => ({
@@ -34,9 +32,10 @@ export default function Register() {
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      alert('Passwords do not match!');
       return;
     }
+
     setIsSubmitting(true);
 
     try {
@@ -58,31 +57,27 @@ export default function Register() {
   };
 
   return (
-   
     <div className="flex min-h-screen items-center justify-center bg-white px-6 py-12 sm:px-6 lg:px-8">
-      <div className="w-full max-w-[440px] space-y-8">
-        
-        {/* Header Section */}
+      <div className="w-full max-w-[440px] space-y-8 animate-in fade-in duration-200">
+
         <div className="space-y-2 text-left">
-          <h2 className="text-[32px] font-bold tracking-tight text-[#1E293B]">
+          <h2 className="text-[32px] font-black tracking-tight text-[#1E293B]">
             Register
           </h2>
-          <p className="text-base text-[#64748B]">
+          <p className="text-base text-[#64748B] font-medium">
             Join our community today
           </p>
         </div>
 
-        {/* Form Container */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
           {error ? (
             <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
               {error}
             </div>
           ) : null}
-          
-          {/* Name Field */}
+
           <div className="space-y-2">
-            <label htmlFor="name" className="block text-base font-medium text-[#1E293B]">
+            <label htmlFor="name" className="block text-base font-bold text-[#1E293B]">
               Name <span className="text-[#EF4444]">*</span>
             </label>
             <input
@@ -93,13 +88,12 @@ export default function Register() {
               value={formData.name}
               onChange={handleChange}
               placeholder="Enter your name"
-              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors"
+              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
             />
           </div>
 
-          {/* Email Field */}
           <div className="space-y-2">
-            <label htmlFor="email" className="block text-base font-medium text-[#1E293B]">
+            <label htmlFor="email" className="block text-base font-bold text-[#1E293B]">
               Email <span className="text-[#EF4444]">*</span>
             </label>
             <input
@@ -111,13 +105,12 @@ export default function Register() {
               value={formData.email}
               onChange={handleChange}
               placeholder="Enter your email"
-              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors"
+              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
             />
           </div>
 
-          {/* Phone Field */}
           <div className="space-y-2">
-            <label htmlFor="phone" className="block text-base font-medium text-[#1E293B]">
+            <label htmlFor="phone" className="block text-base font-bold text-[#1E293B]">
               Phone <span className="text-[#EF4444]">*</span>
             </label>
             <input
@@ -129,13 +122,12 @@ export default function Register() {
               value={formData.phone}
               onChange={handleChange}
               placeholder="Enter 10-digit phone number"
-              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors"
+              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
             />
           </div>
 
-          {/* Password Field */}
           <div className="space-y-2">
-            <label htmlFor="password" className="block text-base font-medium text-[#1E293B]">
+            <label htmlFor="password" className="block text-base font-bold text-[#1E293B]">
               Password <span className="text-[#EF4444]">*</span>
             </label>
             <div className="relative">
@@ -147,7 +139,7 @@ export default function Register() {
                 value={formData.password}
                 onChange={handleChange}
                 placeholder="Enter your password"
-                className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 pr-12 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors"
+                className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 pr-12 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
               />
               <button
                 type="button"
@@ -168,9 +160,8 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Confirm Password Field */}
           <div className="space-y-2">
-            <label htmlFor="confirmPassword" className="block text-base font-medium text-[#1E293B]">
+            <label htmlFor="confirmPassword" className="block text-base font-bold text-[#1E293B]">
               Confirm Password <span className="text-[#EF4444]">*</span>
             </label>
             <div className="relative">
@@ -182,7 +173,7 @@ export default function Register() {
                 value={formData.confirmPassword}
                 onChange={handleChange}
                 placeholder="Confirm your password"
-                className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 pr-12 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors"
+                className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 pr-12 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
               />
               <button
                 type="button"
@@ -203,7 +194,6 @@ export default function Register() {
             </div>
           </div>
 
-          {/* Terms and Conditions Checkbox */}
           <div className="flex items-center pt-1">
             <input
               id="acceptTerms"
@@ -214,30 +204,29 @@ export default function Register() {
               onChange={handleChange}
               className="h-5 w-5 rounded border-gray-300 text-[#3B82F6] focus:ring-[#3B82F6]"
             />
-            <label htmlFor="acceptTerms" className="ml-3 block text-base text-[#475569]">
+            <label htmlFor="acceptTerms" className="ml-3 block text-base text-[#475569] font-semibold">
               I accept the terms and conditions.
             </label>
           </div>
 
-          {/* Submit Button */}
           <div className="pt-2">
             <button
               type="submit"
               disabled={isSubmitting}
-              className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
+              className="flex w-full justify-center rounded-xl bg-[#3B82F6] hover:bg-blue-600 px-4 py-4 text-base font-bold text-white shadow-md shadow-blue-500/10 transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
               {isSubmitting ? 'Creating account…' : 'Sign Up'}
             </button>
           </div>
-          {/* Add this right below the Submit Button <div> container */}
-<p className="mt-6 text-center text-sm sm:text-base text-[#475569]">
-  Already have an account?{' '}
-  <Link to="/" className="font-medium text-[#3B82F6] hover:underline">
-    Sign in
-  </Link>
-</p>
+
+          <p className="mt-6 text-center text-sm sm:text-base text-[#475569] font-semibold">
+            Already have an account?{' '}
+            <Link to="/" className="font-bold text-[#3B82F6] hover:underline">
+              Sign in
+            </Link>
+          </p>
         </form>
-        
+
       </div>
     </div>
   );
