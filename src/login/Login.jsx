@@ -1,13 +1,18 @@
-import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { login as loginApi } from '../api/auth';
+import { setTokenPair } from '../auth/tokenStorage';
 
 export default function Login() {
+    const navigate = useNavigate();
     const [formData, setFormData] = useState({
         email: '',
         password: '',
         rememberMe: false,
     });
     const [showPassword, setShowPassword] = useState(false);
+    const [isSubmitting, setIsSubmitting] = useState(false);
+    const [error, setError] = useState('');
 
 
     const handleChange = (e) => {
@@ -19,10 +24,22 @@ export default function Login() {
     };
 
 
-    const handleSubmit = (e) => {
+    const handleSubmit = async (e) => {
         e.preventDefault();
+        setError('');
+        setIsSubmitting(true);
 
-        console.log('Sending data to backend API:', formData);
+        try {
+            const data = await loginApi({ email: formData.email, password: formData.password });
+            if (data?.accessToken && data?.refreshToken) {
+                setTokenPair(data);
+            }
+            navigate('/home');
+        } catch (err) {
+            setError(err?.message || 'Login failed');
+        } finally {
+            setIsSubmitting(false);
+        }
 
     };
 
@@ -43,6 +60,11 @@ export default function Login() {
 
                 {/* Form Container */}
                 <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+                    {error ? (
+                        <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                            {error}
+                        </div>
+                    ) : null}
 
                     {/* Email Field */}
                     <div className="space-y-2">
@@ -127,9 +149,10 @@ export default function Login() {
                     <div>
                         <button
                             type="submit"
-                            className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] transition-colors"
+                            disabled={isSubmitting}
+                            className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
                         >
-                            Login
+                            {isSubmitting ? 'Logging in…' : 'Login'}
                         </button>
                     </div>
                 </form>

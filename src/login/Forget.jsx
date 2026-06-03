@@ -1,13 +1,26 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
+import { forgotPassword as forgotPasswordApi } from '../api/auth';
 
 export default function ForgotPassword() {
   const [email, setEmail] = useState('');
   const [isSent, setIsSent] = useState(false); 
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
+    setIsSubmitting(true);
 
+    try {
+      await forgotPasswordApi({ email });
+      setIsSent(true);
+    } catch (err) {
+      setError(err?.message || 'Failed to send reset link');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -27,6 +40,11 @@ export default function ForgotPassword() {
             </div>
 
             <form onSubmit={handleSubmit} className="mt-8 space-y-6">
+              {error ? (
+                <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                  {error}
+                </div>
+              ) : null}
               <div className="space-y-2">
                 <label className="block text-base font-medium text-[#1E293B]">
                   Email Address <span className="text-[#EF4444]">*</span>
@@ -43,9 +61,10 @@ export default function ForgotPassword() {
 
               <button
                 type="submit"
-                className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white hover:bg-blue-600"
+                disabled={isSubmitting}
+                className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white hover:bg-blue-600 disabled:opacity-60 disabled:cursor-not-allowed"
               >
-                Send Reset Link
+                {isSubmitting ? 'Sending…' : 'Send Reset Link'}
               </button>
             </form>
           </>

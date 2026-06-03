@@ -1,7 +1,10 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
+import { register as registerApi } from '../api/auth';
+import { setTokenPair } from '../auth/tokenStorage';
 
 export default function Register() {
+  const navigate = useNavigate();
   // 1. State management for easy backend integration
   const [formData, setFormData] = useState({
     name: '',
@@ -14,6 +17,8 @@ export default function Register() {
 
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [error, setError] = useState('');
 
   // Handle input updates dynamically
   const handleChange = (e) => {
@@ -24,15 +29,32 @@ export default function Register() {
     }));
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
+    setError('');
 
     if (formData.password !== formData.confirmPassword) {
       alert("Passwords do not match!");
       return;
     }
-    
+    setIsSubmitting(true);
 
+    try {
+      const data = await registerApi({
+        name: formData.name,
+        email: formData.email,
+        phone: formData.phone,
+        password: formData.password,
+      });
+      if (data?.accessToken && data?.refreshToken) {
+        setTokenPair(data);
+      }
+      navigate('/home');
+    } catch (err) {
+      setError(err?.message || 'Registration failed');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -52,6 +74,11 @@ export default function Register() {
 
         {/* Form Container */}
         <form onSubmit={handleSubmit} className="mt-8 space-y-5">
+          {error ? (
+            <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
           
           {/* Name Field */}
           <div className="space-y-2">
@@ -196,9 +223,10 @@ export default function Register() {
           <div className="pt-2">
             <button
               type="submit"
-              className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] transition-colors"
+              disabled={isSubmitting}
+              className="flex w-full justify-center rounded-xl bg-[#3B82F6] px-4 py-4 text-base font-semibold text-white shadow-sm hover:bg-blue-600 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-[#3B82F6] transition-colors disabled:opacity-60 disabled:cursor-not-allowed"
             >
-              Sign Up
+              {isSubmitting ? 'Creating account…' : 'Sign Up'}
             </button>
           </div>
           {/* Add this right below the Submit Button <div> container */}
