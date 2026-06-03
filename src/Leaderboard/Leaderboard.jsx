@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const mockLeaderboardData = {
   'All Time': {
@@ -58,19 +59,64 @@ const mockLeaderboardData = {
 };
 
 export default function Leaderboard() {
+  const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('All Time');
   const [activeTab, setActiveTab] = useState('Leaderboard');
 
   const currentData = mockLeaderboardData[timeframe];
 
+  const handleGlobalNavigation = (tabName, path) => {
+    setActiveTab(tabName);
+    navigate(path);
+  };
+
+  const navigationTabs = [
+    {
+      id: 'Home',
+      path: '/home',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Leaderboard',
+      path: '/leaderboard',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0V16.5L12 3L3 16.5v2.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Vaults',
+      path: '/vault',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+        </svg>
+      )
+    },
+    {
+      id: 'Options',
+      path: '/options',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      )
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 pb-24 md:pb-12">
       
-      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 py-4 md:px-8">
+      <header className="sticky top-0 z-40 bg-white/80 backdrop-blur-md border-b border-slate-200/80 px-4 py-4 md:px-8 shadow-sm">
         <div className="max-w-4xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => window.history.back()}
+              onClick={() => navigate('/home')}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
@@ -80,16 +126,19 @@ export default function Leaderboard() {
             <h1 className="text-2xl font-bold text-slate-900 tracking-tight">Leaderboard</h1>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
+          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {navigationTabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
-                  activeTab === tab ? 'bg-white text-blue-600 shadow-sm' : 'text-slate-500 hover:text-slate-900'
+                key={tab.id}
+                onClick={() => handleGlobalNavigation(tab.id, tab.path)}
+                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
+                  activeTab === tab.id || (tab.id === 'Leaderboard' && window.location.pathname === '/leaderboard')
+                    ? 'bg-white text-blue-600 shadow-xs' 
+                    : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                {tab}
+                {tab.icon}
+                <span>{tab.id}</span>
               </button>
             ))}
           </div>
@@ -147,7 +196,7 @@ export default function Leaderboard() {
         <div className="space-y-4">
           <div className="flex items-center gap-2 text-slate-900 px-1">
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5 text-blue-600">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 0 1 6 18.719m12 0a5.97 5.97 0 0 0-.75-2.95M12 17c-3.123 0-5.747-1.928-6.75-4.63M12 17a5.97 5.97 0 0 0 4.75-2.37M6 11.77a11.94 11.94 0 0 1 4.227-4.227M13.5 11.75a1.5 1.5 0 11-3 0 1.5 1.5 0 013 0z" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M18 18.72a9.094 9.094 0 0 0 3.741-.479 3 3 0 0 0-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0 1 12 21 Gram framework" />
             </svg>
             <h3 className="text-base font-bold tracking-tight">Our top contributors</h3>
           </div>
@@ -170,7 +219,7 @@ export default function Leaderboard() {
                       <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
                     </svg>
                   </div>
-                  <span className="absolute bottom-0 right-0 transform translate-x-1 translate-y-1 h-5 w-5 rounded-full bg-[#EA580C] text-white text-[10px] font-black flex items-center justify-center border border-white">
+                  <span className="absolute bottom-0 transform translate-x-1 translate-y-1 h-5 w-5 rounded-full bg-[#EA580C] text-white text-[10px] font-black flex items-center justify-center border border-white">
                     #{podium.rank}
                   </span>
                 </div>
@@ -223,18 +272,20 @@ export default function Leaderboard() {
 
       </main>
 
-      <div className="fixed bottom-0 inset-x-0 z-50 border-t border-slate-200 bg-white px-4 py-2 shadow-2xl md:hidden">
+      <div className="fixed bottom-0 inset-x-0 z-50 border-t border-slate-200 bg-white/90 backdrop-blur-md px-4 py-2 shadow-2xl md:hidden">
         <div className="flex items-center justify-around">
-          {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
+          {navigationTabs.map((item) => (
             <button 
-              key={tab} 
-              onClick={() => setActiveTab(tab)} 
-              className={`flex flex-col items-center gap-1 p-2 transition-all ${activeTab === tab ? 'text-blue-600 scale-105' : 'text-slate-400'}`}
+              key={item.id} 
+              onClick={() => handleGlobalNavigation(item.id, item.path)} 
+              className={`flex flex-col items-center gap-1 p-2 transition-all ${
+                activeTab === item.id || (item.id === 'Leaderboard' && window.location.pathname === '/leaderboard')
+                  ? 'text-blue-600 scale-105' 
+                  : 'text-slate-400'
+              }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12" />
-              </svg>
-              <span className="text-[10px] font-bold">{tab}</span>
+              {item.icon}
+              <span className="text-[10px] font-bold">{item.id}</span>
             </button>
           ))}
         </div>

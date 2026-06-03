@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 export default function VaultsPage() {
+  const navigate = useNavigate();
   const [activeSegment, setActiveSegment] = useState('My Vaults');
   const [activeTab, setActiveTab] = useState('Vaults');
   const [isCreating, setIsCreating] = useState(false);
@@ -97,6 +99,49 @@ export default function VaultsPage() {
     setFollowedFeed(prev => prev.map(item => item.id === id ? { ...item, isFollowing: !item.isFollowing } : item));
   };
 
+  const handleGlobalNavigation = (tabName) => {
+    setActiveTab(tabName);
+    if (tabName === 'Home') navigate('/home');
+    if (tabName === 'Leaderboard') navigate('/leaderboard');
+    if (tabName === 'Vaults') navigate('/vault');
+    if (tabName === 'Options') navigate('/options');
+  };
+
+  const navigationTabs = [
+    {
+      id: 'Home',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Leaderboard',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0V16.5L12 3L3 16.5v2.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Vaults',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-19.5 0A2.25 2.25 0 004.5 15h15a2.25 2.25 0 002.25-2.25m-19.5 0v3.75A2.25 2.25 0 004.5 18.75h15a2.25 2.25 0 002.25-2.25v-3.75M12 3v13.5" />
+        </svg>
+      )
+    },
+    {
+      id: 'Options',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      )
+    }
+  ];
+
   return (
     <div className="min-h-screen bg-[#F8FAFC] text-slate-800 pb-24 md:pb-12 relative overflow-hidden">
       
@@ -104,7 +149,7 @@ export default function VaultsPage() {
         <div className="max-w-2xl mx-auto flex items-center justify-between">
           <div className="flex items-center gap-4">
             <button 
-              onClick={() => { if (isCreating) setIsCreating(false); else window.history.back(); }}
+              onClick={() => { if (isCreating) setIsCreating(false); else navigate('/home'); }}
               className="flex h-11 w-11 items-center justify-center rounded-full bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors shrink-0"
             >
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
@@ -116,16 +161,17 @@ export default function VaultsPage() {
             </h1>
           </div>
 
-          <div className="hidden md:flex items-center gap-2 bg-slate-100 p-1 rounded-xl border border-slate-200">
-            {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
+          <div className="hidden md:flex items-center gap-1 bg-slate-100 p-1 rounded-xl border border-slate-200">
+            {navigationTabs.map((tab) => (
               <button
-                key={tab}
-                onClick={() => setActiveTab(tab)}
-                className={`text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
-                  activeTab === tab ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
+                key={tab.id}
+                onClick={() => handleGlobalNavigation(tab.id)}
+                className={`flex items-center gap-1.5 text-sm font-semibold px-4 py-2 rounded-lg transition-all ${
+                  activeTab === tab.id ? 'bg-white text-blue-600 shadow-xs' : 'text-slate-500 hover:text-slate-900'
                 }`}
               >
-                {tab}
+                {tab.icon}
+                <span>{tab.id}</span>
               </button>
             ))}
           </div>
@@ -431,16 +477,18 @@ export default function VaultsPage() {
 
       <div className="fixed bottom-0 inset-x-0 z-50 border-t border-slate-200 bg-white px-4 py-2 shadow-2xl md:hidden">
         <div className="flex items-center justify-around">
-          {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
+          {navigationTabs.map((tab) => (
             <button 
-              key={tab} 
-              onClick={() => setActiveTab(tab)} 
-              className={`flex flex-col items-center gap-1 p-2 ${activeTab === tab ? 'text-blue-600 scale-105' : 'text-slate-400'}`}
+              key={tab.id} 
+              onClick={() => handleGlobalNavigation(tab.id)} 
+              className={`flex flex-col items-center gap-1 p-2 transition-all ${
+                activeTab === tab.id || (tab.id === 'Vaults' && window.location.pathname === '/vault')
+                  ? 'text-blue-600 scale-105' 
+                  : 'text-slate-400'
+              }`}
             >
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-5 h-5">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
-              </svg>
-              <span className="text-[10px] font-bold">{tab}</span>
+              {tab.icon}
+              <span className="text-[10px] font-bold">{tab.id}</span>
             </button>
           ))}
         </div>

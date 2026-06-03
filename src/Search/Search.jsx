@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 
 const mockRecentSearches = [
   { id: 1, query: 'Hello', date: '2/6/2026' },
@@ -6,6 +7,7 @@ const mockRecentSearches = [
 ];
 
 export default function SearchPage({ onChangePlan }) {
+  const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState('');
   const [answerDepth, setAnswerDepth] = useState('Balanced');
   const [viewMode, setViewMode] = useState('landing');
@@ -114,10 +116,49 @@ export default function SearchPage({ onChangePlan }) {
     });
   };
 
-  const clearChat = () => {
-    setMessages([]);
-    setSearchQuery('');
+  const handleGlobalNavigation = (tabName, path) => {
+    setActiveTab(tabName);
+    navigate(path);
   };
+
+  const navigationTabs = [
+    {
+      id: 'Home',
+      path: '/home',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12M4.5 9.75v10.125c0 .621.504 1.125 1.125 1.125H9.75v-4.875c0-.621.504-1.125 1.125-1.125h2.25c.621 0 1.125.504 1.125 1.125V21h4.125c.621 0 1.125-.504 1.125-1.125V9.75M8.25 21h8.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Leaderboard',
+      path: '/leaderboard',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M16.5 18.75h-9m9 0a3 3 0 013 3h-15a3 3 0 013-3m9 0v-3.375c0-.621-.504-1.125-1.125-1.125h-2.25c-.621 0-1.125.504-1.125 1.125V18.75m9 0V16.5L12 3L3 16.5v2.25" />
+        </svg>
+      )
+    },
+    {
+      id: 'Vaults',
+      path: '/vault',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12.75V12A2.25 2.25 0 014.5 9.75h15A2.25 2.25 0 0121.75 12v.75m-19.5 0A2.25 2.25 0 004.5 15h15a2.25 2.25 0 002.25-2.25m-19.5 0v3.75A2.25 2.25 0 004.5 18.75h15a2.25 2.25 0 002.25-2.25v-3.75M12 3v13.5" />
+        </svg>
+      )
+    },
+    {
+      id: 'Options',
+      path: '/options',
+      icon: (
+        <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">
+          <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
+        </svg>
+      )
+    }
+  ];
 
   return (
     <div className="min-h-screen bg-white text-slate-800 flex flex-col justify-between pb-24 md:pb-6 relative">
@@ -127,7 +168,7 @@ export default function SearchPage({ onChangePlan }) {
           <button 
             onClick={() => {
               if (viewMode === 'results' || viewMode === 'chat') setViewMode('landing');
-              else window.history.back();
+              else navigate('/home');
             }}
             className="flex h-11 w-11 items-center justify-center rounded-full bg-blue-500 text-white shadow-sm hover:bg-blue-600 transition-colors shrink-0"
           >
@@ -199,7 +240,7 @@ export default function SearchPage({ onChangePlan }) {
                   placeholder="Ask a question..."
                   className="w-full bg-transparent border-0 pl-3 pr-12 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"
                 />
-                <button type="submit" className="absolute right-3 p-2 rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-500 hover:text-white transition-all">
+                <button type="submit" className="absolute right-3 p-2 rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-50 hover:text-white transition-all">
                   <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2.5} stroke="currentColor" className="w-4 h-4"><path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.197-5.197m0 0A7.5 7.5 0 105.196 5.196a7.5 7.5 0 0010.604 10.604z" /></svg>
                 </button>
               </div>
@@ -321,7 +362,6 @@ export default function SearchPage({ onChangePlan }) {
                   <p className="whitespace-pre-wrap leading-relaxed">{msg.text}</p>
                 </div>
                 
-                {/* DYNAMICALLY RENDER THE CONTRIBUTE BUTTON UNDER EVERY AI CHAT CHUNK RESPONSE */}
                 {msg.sender === 'ai' && (
                   <button
                     onClick={() => openContributionSheet(msg.associatedQuestion)}
@@ -390,12 +430,18 @@ export default function SearchPage({ onChangePlan }) {
 
       <div className="fixed bottom-0 inset-x-0 z-50 border-t border-slate-200 bg-white px-4 py-2 shadow-xl md:hidden">
         <div className="flex items-center justify-around">
-          {['Home', 'Leaderboard', 'Vaults', 'Options'].map((tab) => (
-            <button key={tab} onClick={() => setActiveTab(tab)} className={`flex flex-col items-center gap-1 p-2 ${activeTab === tab ? 'text-blue-500' : 'text-slate-400'}`}>
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-6 h-6">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12l8.954-8.955c.44-.439 1.152-.439 1.591 0L21.75 12" />
-              </svg>
-              <span className="text-xs font-semibold">{tab}</span>
+          {navigationTabs.map((tab) => (
+            <button 
+              key={tab.id} 
+              onClick={() => handleGlobalNavigation(tab.id, tab.path)} 
+              className={`flex flex-col items-center gap-1 p-2 transition-all ${
+                activeTab === tab.id || (tab.id === 'Home' && viewMode !== 'landing')
+                  ? 'text-blue-600 scale-105' 
+                  : 'text-slate-400'
+              }`}
+            >
+              {tab.icon}
+              <span className="text-xs font-semibold">{tab.id}</span>
             </button>
           ))}
         </div>
