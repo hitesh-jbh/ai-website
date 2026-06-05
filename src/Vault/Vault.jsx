@@ -1,90 +1,121 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import {
+  getUserVaults,
+  getSavedVaults,
+  getFollowedVaults,
+  createVault,
+  followVault,
+  unfollowVault,
+} from '../api/vault';
+
+function mapVaultItem(v) {
+  return {
+    id: v.id,
+    title: v.title,
+    description: v.description || 'No description provided.',
+    summary: v.summary || 'No overview summary documented.',
+    resourcesCount: v.resourcesCount ?? 0,
+    contact: { phone: v.mobileNumber || '', email: v.email || '' },
+  };
+}
+
+function mapSavedItem(v) {
+  return {
+    id: v.id,
+    title: v.title,
+    author: v.name || 'Creator',
+    role: 'Vault',
+    summary: v.summary || v.description || '',
+    type: 'Vault',
+    likes: 0,
+    saved: true,
+    timestamp: '',
+  };
+}
+
+function mapFollowedItem(v) {
+  return {
+    id: v.id,
+    vaultName: v.title,
+    owner: v.name || 'Creator',
+    subscribers: '',
+    latestUpdate: v.summary || v.description || '',
+    vaultsCount: 0,
+    resourcesCount: v.resourcesCount ?? 0,
+    isFollowing: true,
+  };
+}
 
 export default function VaultsPage() {
   const navigate = useNavigate();
   const [activeSegment, setActiveSegment] = useState('My Vaults');
   const [activeTab, setActiveTab] = useState('Vaults');
   const [isCreating, setIsCreating] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState('');
   
   const [vaults, setVaults] = useState([]);
   
-  const [savedFeed, setSavedFeed] = useState([
-    {
-      id: 101,
-      title: 'Deep Learning Optimization Weights',
-      author: 'Krishan Kumar',
-      role: 'AI Researcher',
-      summary: 'Curated resource containing pre-trained tensor layouts and gradient metrics for conversational multi-agent systems.',
-      type: 'PDF Document',
-      size: '14.2 MB',
-      likes: 42,
-      saved: true,
-      timestamp: '2 hours ago'
-    },
-    {
-      id: 102,
-      title: 'Advanced Tailwind Component Architecture v4',
-      author: 'Aman Bhati',
-      role: 'Technical Lead',
-      summary: 'Production-ready code vectors detailing responsive complex layout design architectures without custom stylesheet overrides.',
-      type: 'Code Repository Link',
-      url: 'https://github.com/knowvault/tailwind-pro',
-      likes: 128,
-      saved: true,
-      timestamp: 'Yesterday'
-    }
-  ]);
-
-  const [followedFeed, setFollowedFeed] = useState([
-    {
-      id: 201,
-      vaultName: 'Hitesh Premium Development Vault',
-      owner: 'Hitesh Chouhan',
-      subscribers: '1.2K followers',
-      latestUpdate: 'Uploaded 8 new system design structural diagrams.',
-      vaultsCount: 14,
-      resourcesCount: 182,
-      isFollowing: true
-    }
-  ]);
+  const [savedFeed, setSavedFeed] = useState([]);
+  const [followedFeed, setFollowedFeed] = useState([]);
 
   const [formFields, setFormFields] = useState({
     title: '',
     description: '',
     summary: '',
-    phone: '9625181162',
-    email: 'ashishsingh0828@gmail.com'
+    phone: '',
+    email: '',
   });
+
+  const loadVaultData = async () => {
+    setIsLoading(true);
+    setError('');
+    try {
+      const [mine, saved, followed] = await Promise.all([
+        getUserVaults(),
+        getSavedVaults(),
+        getFollowedVaults(),
+      ]);
+      setVaults((mine?.vaults || []).map(mapVaultItem));
+      setSavedFeed((saved?.vaults || []).map(mapSavedItem));
+      setFollowedFeed((followed?.vaults || []).map(mapFollowedItem));
+    } catch (err) {
+      setError(err?.message || 'Failed to load vaults');
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadVaultData();
+  }, []);
 
   const handleInputChange = (e) => {
     const { name, value } = e.target;
     setFormFields(prev => ({ ...prev, [name]: value }));
   };
 
-  const handleCreateVaultSubmit = (e) => {
+  const handleCreateVaultSubmit = async (e) => {
     e.preventDefault();
     if (!formFields.title.trim()) return;
 
-    const newVault = {
-      id: Date.now(),
-      title: formFields.title,
-      description: formFields.description || 'No description provided.',
-      summary: formFields.summary || 'No overview summary documented.',
-      resourcesCount: 0,
-      contact: { phone: formFields.phone, email: formFields.email }
-    };
-
-    setVaults(prev => [newVault, ...prev]);
-    setFormFields({
-      title: '',
-      description: '',
-      summary: '',
-      phone: '9625181162',
-      email: 'ashishsingh0828@gmail.com'
-    });
-    setIsCreating(false);
-    setActiveSegment('My Vaults');
+    try {
+      await createVault({
+        title: formFields.title,
+        description: formFields.description,
+        summary: formFields.summary,
+        name: formFields.title,
+        email: formFields.email || undefined,
+        mobileNumber: formFields.phone || undefined,
+      });
+      await loadVaultData();
+      setFormFields({ title: '', description: '', summary: '', phone: '', email: '' });
+      setIsCreating(false);
+      setActiveSegment('My Vaults');
+    } catch (err) {
+      setError(err?.message || 'Failed to create vault');
+    }
   };
 
   const toggleLikeSavedItem = (id) => {
@@ -95,8 +126,19 @@ export default function VaultsPage() {
     setSavedFeed(prev => prev.filter(item => item.id !== id));
   };
 
-  const toggleFollowVault = (id) => {
-    setFollowedFeed(prev => prev.map(item => item.id === id ? { ...item, isFollowing: !item.isFollowing } : item));
+  const toggleFollowVault = async (id) => {
+    const item = followedFeed.find((f) => f.id === id);
+    if (!item) return;
+    try {
+      if (item.isFollowing) {
+        await unfollowVault(id);
+      } else {
+        await followVault(id);
+      }
+      await loadVaultData();
+    } catch (err) {
+      setError(err?.message || 'Failed to update follow status');
+    }
   };
 
   const handleGlobalNavigation = (tabName) => {

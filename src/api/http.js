@@ -77,3 +77,28 @@ export async function apiRequest(path, { method = "GET", body, auth = false, hea
   throw new ApiError(message, { status: res.status, payload });
 }
 
+export async function apiFormRequest(path, formData, { method = "POST", auth = true } = {}) {
+  const url = joinUrl(getApiBaseUrl(), path);
+  const finalHeaders = {};
+
+  if (auth) {
+    const token = getAccessToken();
+    if (token) finalHeaders.Authorization = `Bearer ${token}`;
+  }
+
+  const res = await fetch(url, {
+    method,
+    headers: finalHeaders,
+    body: formData,
+  });
+
+  const payload = await readJsonSafe(res);
+
+  if (res.ok && payload?.success !== false) {
+    return payload?.data ?? payload;
+  }
+
+  const message = payload?.message || `Request failed (${res.status})`;
+  throw new ApiError(message, { status: res.status, payload });
+}
+

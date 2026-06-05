@@ -1,10 +1,7 @@
-import React, { useState, useRef, useEffect } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-
-const mockRecentSearches = [
-  { id: 1, query: 'Hello', date: '2/6/2026' },
-  { id: 2, query: 'Best AI tools for developers', date: '28/5/2026' }
-];
+import { search as searchApi, getSearchHistory, mapAiPreference, submitCommunityAnswer } from '../api/search';
+import { createThread } from '../api/thread';
 
 export default function SearchPage({ onChangePlan }) {
   const navigate = useNavigate();
@@ -12,6 +9,8 @@ export default function SearchPage({ onChangePlan }) {
   const [answerDepth, setAnswerDepth] = useState('Balanced');
   const [viewMode, setViewMode] = useState('landing');
   const [activeTab, setActiveTab] = useState('Home');
+  const [recentSearches, setRecentSearches] = useState([]);
+  const [searchError, setSearchError] = useState('');
   
   const [bottomSheet, setBottomSheet] = useState({ visible: false, type: null, contextQuestion: '' });
   const [showDepthDropdown, setShowDepthDropdown] = useState(false);
@@ -23,9 +22,58 @@ export default function SearchPage({ onChangePlan }) {
   const [contribType, setContribType] = useState('LINK');
   const [contribLink, setContribLink] = useState('');
   const [selectedFileName, setSelectedFileName] = useState('');
+  const [contribFile, setContribFile] = useState(null);
 
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
+  const threadIdRef = useRef(null);
+
+  useEffect(() => {
+    getSearchHistory({ limit: 10 })
+      .then((history) => {
+        const list = Array.isArray(history) ? history : [];
+        setRecentSearches(list.map((h, i) => ({
+          id: h.id || i,
+          query: h.query || h.searchQuery || '',
+          date: h.createdAt ? new Date(h.createdAt).toLocaleDateString() : '',
+        })));
+      })
+      .catch(() => {});
+  }, []);
+
+  const ensureThreadId = async () => {
+    if (threadIdRef.current) return threadIdRef.current;
+    const data = await createThread();
+    threadIdRef.current = data?.threadId;
+    return threadIdRef.current;
+  };
+
+  const runSearch = async (query) => {
+    setSearchError('');
+    setIsLoading(true);
+    setAiAnswerMarkdown('');
+    try {
+      const threadId = await ensureThreadId();
+      const result = await searchApi({
+        query,
+        threadId,
+        aiPreference: mapAiPreference(answerDepth),
+      });
+      const answer = typeof result?.answer === 'string'
+        ? result.answer
+        : JSON.stringify(result?.answer ?? result, null, 2);
+      setAiAnswerMarkdown(answer);
+    } catch (err) {
+      if (err?.status === 402 || err?.payload?.requiresSubscription) {
+        setSearchError('Active subscription required. Please choose a plan.');
+        navigate('/subscriptions');
+        return;
+      }
+      setSearchError(err?.message || 'Search failed');
+    } finally {
+      setIsLoading(false);
+    }
+  };
 
   useEffect(() => {
     if (viewMode === 'chat') {
@@ -36,27 +84,14 @@ export default function SearchPage({ onChangePlan }) {
   const handleSearchSubmit = (e) => {
     if (e) e.preventDefault();
     if (!searchQuery.trim()) return;
-
     setViewMode('results');
-    setIsLoading(true);
-    setAiAnswerMarkdown('');
-
-    setTimeout(() => {
-      setAiAnswerMarkdown(
-        `of these differences when interacting across cultures.\n* **Appropriateness of Tone:**\n    * **Enthusiastic Hello:** For friends or exciting situations.\n    * **Calm Hello:** For professional or formal encounters.\n    * **Questioning Hello:** "Hello?" when answering the phone or checking if someone is present.\n\nIn essence, "hello" is more than just a word; it's a social key that unlocks connection and communication in its many forms.`
-      );
-      setIsLoading(false);
-    }, 1000);
+    runSearch(searchQuery.trim());
   };
 
   const handleRecentSearchClick = (query) => {
     setSearchQuery(query);
     setViewMode('results');
-    setIsLoading(true);
-    setTimeout(() => {
-      setAiAnswerMarkdown(`Custom parsed dynamic response for query: ${query}`);
-      setIsLoading(false);
-    }, 800);
+    runSearch(query);
   };
 
   const handleStartChatIntent = () => {
@@ -66,7 +101,7 @@ export default function SearchPage({ onChangePlan }) {
     }
   };
 
-  const executeChatMsg = (text) => {
+  const executeChatMsg = async (text) => {
     if (!text.trim()) return;
     
     const userMsg = { 
@@ -78,34 +113,63 @@ export default function SearchPage({ onChangePlan }) {
     
     setMessages(prev => [...prev, userMsg]);
     setIsLoading(true);
+    setSearchError('');
 
-    setTimeout(() => {
+    try {
+      const threadId = await ensureThreadId();
+      const result = await searchApi({
+        query: text,
+        threadId,
+        aiPreference: mapAiPreference(answerDepth),
+      });
+      const answer = typeof result?.answer === 'string'
+        ? result.answer
+        : JSON.stringify(result?.answer ?? result, null, 2);
       const aiMsg = {
         id: Date.now() + 1,
         sender: 'ai',
-        text: `This is an ongoing conversational response item inside the standard execution layout framework parsed for: "${text}".`,
+        text: answer,
         depth: answerDepth,
-        associatedQuestion: text
+        associatedQuestion: text,
       };
       setMessages(prev => [...prev, aiMsg]);
+    } catch (err) {
+      setSearchError(err?.message || 'Search failed');
+    } finally {
       setIsLoading(false);
-    }, 1000);
+    }
   };
 
   const handleFileChange = (e) => {
     if (e.target.files && e.target.files[0]) {
+      setContribFile(e.target.files[0]);
       setSelectedFileName(e.target.files[0].name);
     }
   };
 
-  const handleContributionSubmit = (e) => {
+  const handleContributionSubmit = async (e) => {
     e.preventDefault();
-    console.log('Submitting Contribution:', { text: contribText, type: contribType, link: contribLink, file: selectedFileName });
-    setBottomSheet({ visible: false, type: null, contextQuestion: '' });
-    setContribText('');
-    setContribLink('');
-    setSelectedFileName('');
-    alert('Answer contribution successfully saved!');
+    const query = bottomSheet.contextQuestion || searchQuery;
+    const answer = contribType === 'LINK' ? contribLink : contribText;
+    if (!query?.trim() || !answer?.trim() || answer.length < 10) {
+      alert('Please provide a question and an answer (at least 10 characters).');
+      return;
+    }
+    try {
+      await submitCommunityAnswer({
+        query,
+        answer,
+        file: contribFile || undefined,
+      });
+      setBottomSheet({ visible: false, type: null, contextQuestion: '' });
+      setContribText('');
+      setContribLink('');
+      setSelectedFileName('');
+      setContribFile(null);
+      alert('Answer contribution successfully saved!');
+    } catch (err) {
+      alert(err?.message || 'Failed to submit contribution');
+    }
   };
 
   const openContributionSheet = (questionContext) => {
@@ -270,7 +334,7 @@ export default function SearchPage({ onChangePlan }) {
                 </button>
               </div>
               <div className="space-y-3">
-                {mockRecentSearches.map((search) => (
+                {recentSearches.map((search) => (
                   <button
                     key={search.id}
                     onClick={() => handleRecentSearchClick(search.query)}
@@ -290,6 +354,11 @@ export default function SearchPage({ onChangePlan }) {
 
         {viewMode === 'results' && (
           <div className="space-y-6 animate-in fade-in duration-200 pb-12">
+            {searchError ? (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {searchError}
+              </div>
+            ) : null}
             <div className="relative flex items-center bg-[#F1F5F9] rounded-2xl px-4 py-4 border border-slate-200 shadow-xs">
               <input 
                 type="text"

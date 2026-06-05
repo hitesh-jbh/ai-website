@@ -1,9 +1,43 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getCurrentSubscriptionStatus, activateFreePlan } from '../api/subscription';
 
 export default function ManageSubscriptions({ onPlanSelect }) {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Options');
+  const [status, setStatus] = useState(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getCurrentSubscriptionStatus()
+      .then((data) => {
+        setStatus(data);
+        if (data?.hasSubscription) onPlanSelect('active');
+      })
+      .catch((err) => setError(err?.message || 'Failed to load subscription'))
+      .finally(() => setIsLoading(false));
+  }, [onPlanSelect]);
+
+  const handleActivateFree = async () => {
+    try {
+      await activateFreePlan();
+      const data = await getCurrentSubscriptionStatus();
+      setStatus(data);
+      if (data?.hasSubscription) onPlanSelect('active');
+    } catch (err) {
+      setError(err?.message || 'Failed to activate plan');
+    }
+  };
+
+  const usage = status?.usage;
+  const planName = status?.subscription?.plan || 'Free';
+  const queriesUsed = usage?.queriesUsedToday ?? 0;
+  const queriesLimit = usage?.dailyQueriesLimit ?? status?.subscription?.dailyQueriesLimit ?? 40;
+  const tokensUsed = usage?.tokensUsedToday ?? 0;
+  const tokensLimit = usage?.dailyTokensLimit ?? status?.subscription?.dailyTokensLimit ?? 400000;
+  const queriesPct = queriesLimit ? Math.min(100, (queriesUsed / queriesLimit) * 100) : 0;
+  const tokensPct = tokensLimit ? Math.min(100, (tokensUsed / tokensLimit) * 100) : 0;
 
   const handleTabNavigation = (tabName, path) => {
     setActiveTab(tabName);
@@ -49,26 +83,32 @@ export default function ManageSubscriptions({ onPlanSelect }) {
       </header>
 
       <main className="w-full max-w-xl mx-auto px-4 space-y-6 mt-6">
+        {error ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">{error}</div>
+        ) : null}
+        {isLoading ? (
+          <p className="text-center text-sm text-slate-400 font-semibold">Loading subscription…</p>
+        ) : null}
         
         <div className="bg-white rounded-3xl p-6 border border-slate-200/60 shadow-sm space-y-4">
           <h2 className="text-sm font-bold uppercase tracking-wider text-blue-600">Current Plan Status</h2>
           <div className="flex items-baseline justify-between">
-            <p className="text-2xl font-black text-slate-900">Free Plan</p>
+            <p className="text-2xl font-black text-slate-900">{planName} Plan</p>
           </div>
           <div className="space-y-3 pt-2 border-t border-slate-100">
             <div className="flex justify-between items-center text-sm">
               <span className="font-semibold text-slate-500">Queries Used</span>
-              <span className="font-bold text-slate-800">3 / 40</span>
+              <span className="font-bold text-slate-800">{queriesUsed} / {queriesLimit}</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div className="bg-blue-500 h-full rounded-full" style={{ width: '7.5%' }} />
+              <div className="bg-blue-500 h-full rounded-full" style={{ width: `${queriesPct}%` }} />
             </div>
             <div className="flex justify-between items-center text-sm pt-1">
               <span className="font-semibold text-slate-500">Tokens Used</span>
-              <span className="font-bold text-slate-800">2,063 / 4,00,000</span>
+              <span className="font-bold text-slate-800">{tokensUsed.toLocaleString()} / {tokensLimit.toLocaleString()}</span>
             </div>
             <div className="w-full bg-slate-100 h-2 rounded-full overflow-hidden">
-              <div className="bg-indigo-500 h-full rounded-full" style={{ width: '0.5%' }} />
+              <div className="bg-indigo-500 h-full rounded-full" style={{ width: `${tokensPct}%` }} />
             </div>
           </div>
         </div>
@@ -76,15 +116,17 @@ export default function ManageSubscriptions({ onPlanSelect }) {
         <div className="space-y-4">
           <h3 className="text-lg font-bold text-slate-900 tracking-tight px-1">Available Plans</h3>
           
-          <div className="bg-white rounded-3xl p-6 border-2 border-blue-500 shadow-sm space-y-4 relative">
+          <div className="bg-white rounded-3xl p-6 border-2 bordser-blue-500 shadow-sm space-y-4 relative">
             <div className="flex justify-between items-start">
               <div>
                 <h4 className="text-xl font-black text-slate-900 tracking-tight uppercase">FREE</h4>
                 <p className="text-sm text-slate-400 font-semibold mt-0.5">Free</p>
               </div>
-              <span className="bg-[#22C55E] text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
-                Current
-              </span>
+              {status?.hasSubscription ? (
+                <span className="bg-[#22C55E] text-white text-xs font-bold px-3 py-1 rounded-full shadow-xs">
+                  Current
+                </span>
+              ) : null}
             </div>
 
             <div className="text-3xl font-black text-slate-900 pt-1">
@@ -111,10 +153,15 @@ export default function ManageSubscriptions({ onPlanSelect }) {
             </div>
 
             <button 
-              onClick={() => onPlanSelect('Free_Plan_Active')}
-              className="w-full mt-4 bg-slate-200 text-slate-500 font-bold py-4 rounded-2xl text-base transition-colors"
+              onClick={status?.hasSubscription ? undefined : handleActivateFree}
+              disabled={status?.hasSubscription}
+              className={`w-full mt-4 font-bold py-4 rounded-2xl text-base transition-colors ${
+                status?.hasSubscription
+                  ? 'bg-slate-200 text-slate-500 cursor-default'
+                  : 'bg-blue-500 text-white hover:bg-blue-600'
+              }`}
             >
-              Current Plan
+              {status?.hasSubscription ? 'Current Plan' : 'Activate Free Plan'}
             </button>
           </div>
         </div>

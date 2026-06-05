@@ -1,4 +1,4 @@
-import { apiRequest } from "./http";
+import { apiRequest, apiFormRequest } from "./http";
 
 export function register({ name, email, phone, password, role = "user" }) {
   return apiRequest("auth/register", {
@@ -19,5 +19,23 @@ export function forgotPassword({ email }) {
     method: "POST",
     body: { email },
   });
+}
+
+export function getProfile() {
+  return apiRequest("auth/profile", { auth: true });
+}
+
+export function updateProfile({ name, bio, upiId, profilePicture }) {
+  return apiRequest("auth/profile", {
+    method: "PUT",
+    auth: true,
+    body: { name, bio, upiId, profilePicture },
+  });
+}
+
+export function uploadProfilePicture(file) {
+  const formData = new FormData();
+  formData.append("file", file);
+  return apiFormRequest("auth/profile/upload-picture", formData, { auth: true });
 }
 

@@ -1,69 +1,76 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getTopUsers, getUserRank, mapLeaderboardPeriod } from '../api/leaderboard';
 
-const mockLeaderboardData = {
-  'All Time': {
-    userRank: { rank: '#4', totalUsers: '8', coins: '0', target: '#3' },
-    topThree: [
-      { rank: 1, name: 'Krishan K...', coins: 40 },
-      { rank: 2, name: 'Aman Bh...', coins: 20 },
-      { rank: 3, name: 'Hitesh Ch...', coins: 10 },
-    ],
-    list: [
-      { rank: 4, name: 'Alisha', handle: '#4', role: 'Content Creator', coins: 0 },
-      { rank: 5, name: 'aarti89306@gmail.com', handle: '#5', role: 'Content Creator', coins: 0 },
-      { rank: 6, name: 'palak', handle: '#6', role: 'Content Creator', coins: 0 },
-      { rank: 7, name: 'Hitesh Chouhan', handle: '#7', role: 'Content Creator', coins: 0 },
-      { rank: 8, name: 'ashish', handle: '#8', role: 'Content Creator', coins: 0 },
-    ]
-  },
-  'Daily': {
-    userRank: { rank: '#2', totalUsers: '12', coins: '45', target: '#1' },
-    topThree: [
-      { rank: 1, name: 'Aman Bh...', coins: 65 },
-      { rank: 2, name: 'You', coins: 45 },
-      { rank: 3, name: 'Alisha', coins: 30 },
-    ],
-    list: [
-      { rank: 4, name: 'Krishan K...', handle: '#4', role: 'Content Creator', coins: 25 },
-      { rank: 5, name: 'palak', handle: '#5', role: 'Content Creator', coins: 15 },
-      { rank: 6, name: 'ashish', handle: '#6', role: 'Content Creator', coins: 10 },
-    ]
-  },
-  'Weekly': {
-    userRank: { rank: '#5', totalUsers: '15', coins: '110', target: '#4' },
-    topThree: [
-      { rank: 1, name: 'Hitesh Ch...', coins: 320 },
-      { rank: 2, name: 'palak', coins: 240 },
-      { rank: 3, name: 'Krishan K...', coins: 195 },
-    ],
-    list: [
-      { rank: 4, name: 'Aman Bh...', handle: '#4', role: 'Technical Writer', coins: 150 },
-      { rank: 5, name: 'You', handle: '#5', role: 'Content Creator', coins: 110 },
-      { rank: 6, name: 'aarti89306@gmail.com', handle: '#6', role: 'Content Creator', coins: 85 },
-    ]
-  },
-  'Monthly': {
-    userRank: { rank: '#3', totalUsers: '24', coins: '840', target: '#2' },
-    topThree: [
-      { rank: 1, name: 'Krishan K...', coins: 1450 },
-      { rank: 2, name: 'aarti89306@gmail.com', coins: 990 },
-      { rank: 3, name: 'You', coins: 840 },
-    ],
-    list: [
-      { rank: 4, name: 'Hitesh Ch...', handle: '#4', role: 'Content Creator', coins: 720 },
-      { rank: 5, name: 'Aman Bh...', handle: '#5', role: 'Technical Writer', coins: 610 },
-      { rank: 6, name: 'palak', handle: '#6', role: 'Content Creator', coins: 450 },
-    ]
-  }
+const EMPTY_DATA = {
+  userRank: { rank: '—', totalUsers: '0', coins: '0', target: '#1' },
+  topThree: [],
+  list: [],
 };
+
+function truncateName(name, max = 12) {
+  if (!name) return 'Unknown';
+  return name.length > max ? `${name.slice(0, max)}...` : name;
+}
+
+function buildLeaderboardView(topData, rankData) {
+  const entries = topData?.entries || [];
+  const topThree = entries.slice(0, 3).map((e) => ({
+    rank: e.rank,
+    name: truncateName(e.userName),
+    coins: e.score ?? 0,
+  }));
+  const list = entries.slice(3).map((e) => ({
+    rank: e.rank,
+    name: e.userName || 'Unknown',
+    handle: `#${e.rank}`,
+    role: 'Content Creator',
+    coins: e.score ?? 0,
+  }));
+  const entry = rankData?.entry;
+  const totalUsers = rankData?.totalUsers ?? topData?.total ?? 0;
+  const userRank = {
+    rank: entry ? `#${entry.rank}` : '—',
+    totalUsers: String(totalUsers),
+    coins: String(entry?.score ?? 0),
+    target: entry && entry.rank > 1 ? `#${entry.rank - 1}` : '#1',
+  };
+  return { userRank, topThree, list };
+}
 
 export default function Leaderboard() {
   const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('All Time');
   const [activeTab, setActiveTab] = useState('Leaderboard');
+  const [currentData, setCurrentData] = useState(EMPTY_DATA);
+  const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState('');
 
-  const currentData = mockLeaderboardData[timeframe];
+  useEffect(() => {
+    let cancelled = false;
+    const period = mapLeaderboardPeriod(timeframe);
+    setIsLoading(true);
+    setError('');
+
+    Promise.all([
+      getTopUsers({ period, limit: 20 }),
+      getUserRank({ period }).catch(() => null),
+    ])
+      .then(([topData, rankData]) => {
+        if (cancelled) return;
+        setCurrentData(buildLeaderboardView(topData, rankData));
+      })
+      .catch((err) => {
+        if (cancelled) return;
+        setError(err?.message || 'Failed to load leaderboard');
+        setCurrentData(EMPTY_DATA);
+      })
+      .finally(() => {
+        if (!cancelled) setIsLoading(false);
+      });
+
+    return () => { cancelled = true; };
+  }, [timeframe]);
 
   const handleGlobalNavigation = (tabName, path) => {
     setActiveTab(tabName);
@@ -146,6 +153,14 @@ export default function Leaderboard() {
       </header>
 
       <main className="max-w-2xl mx-auto px-4 pt-6 space-y-6">
+        {error ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
+        {isLoading ? (
+          <p className="text-center text-sm font-semibold text-slate-400">Loading leaderboard…</p>
+        ) : null}
         
         <div className="flex items-center gap-2 overflow-x-auto pb-1 scrollbar-none snap-x">
           {['All Time', 'Daily', 'Weekly', 'Monthly'].map((tab) => {

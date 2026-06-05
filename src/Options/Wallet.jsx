@@ -1,34 +1,65 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile } from '../api/auth';
+import { getWallet, getTransactions, getDailyEarnings, requestWithdrawal } from '../api/wallet';
 
 export default function WalletPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Options');
-  const [balance, setBalance] = useState(0.00);
-  const [totalEarnings, setTotalEarnings] = useState(0.00);
-  const [todaysEarnings, setTodaysEarnings] = useState(0.00);
+  const [balance, setBalance] = useState(0);
+  const [totalEarnings, setTotalEarnings] = useState(0);
+  const [todaysEarnings, setTodaysEarnings] = useState(0);
+  const [upiId, setUpiId] = useState('');
+  const [error, setError] = useState('');
   
   const [alertModal, setAlertModal] = useState({ visible: false, message: '', requiredAmount: 0 });
+  const [transactions, setTransactions] = useState([]);
 
-  const [transactions, setTransactions] = useState([
-    { id: 'TXN-9842', type: 'Ad Revenue Share', amount: 'Hex Node Contribution', coins: '฿45 Coins', cashValue: '₹45.00', status: 'Credited', date: '02 Jun 2026' },
-    { id: 'TXN-9841', type: 'Vault Verified Answer Reward', amount: 'System Validation Sync', coins: '฿120 Coins', cashValue: '₹120.00', status: 'Credited', date: '30 May 2026' },
-    { id: 'TXN-9840', type: 'Community Engagement Milestone', amount: 'Platform Alpha Bonus', coins: '฿35 Coins', cashValue: '₹35.00', status: 'Credited', date: '25 May 2026' }
-  ]);
+  useEffect(() => {
+    Promise.all([getWallet(), getTransactions(), getDailyEarnings(), getProfile()])
+      .then(([wallet, txns, daily, profile]) => {
+        setBalance(parseFloat(wallet?.availableBalance || 0));
+        setTotalEarnings(parseFloat(wallet?.totalEarnings || 0));
+        setTodaysEarnings(parseFloat(daily?.estimatedEarnings || daily?.todayEarnings || 0));
+        setUpiId(profile?.upiId || '');
+        const list = Array.isArray(txns) ? txns : [];
+        setTransactions(list.map((t) => ({
+          id: t.id || t.transactionId,
+          type: t.type || t.source || 'Transaction',
+          amount: t.description || t.sourceName || '',
+          coins: t.coins ? `${t.coins} Coins` : '',
+          cashValue: t.amount ? `₹${t.amount}` : '',
+          status: t.status || 'Credited',
+          date: t.createdAt ? new Date(t.createdAt).toLocaleDateString() : '',
+        })));
+      })
+      .catch((err) => setError(err?.message || 'Failed to load wallet'));
+  }, []);
 
-  const handleWithdrawalVerification = () => {
-    const MINIMUM_WITHDRAWAL = 200.00;
+  const handleWithdrawalVerification = async () => {
+    const MINIMUM_WITHDRAWAL = 200;
     
     if (balance < MINIMUM_WITHDRAWAL) {
-      const deficiency = MINIMUM_WITHDRAWAL - balance;
       setAlertModal({
         visible: true,
-        message: `Insufficient Funds: Your available balance is below the minimum threshold requirement.`,
-        requiredAmount: deficiency
+        message: 'Insufficient Funds: Your available balance is below the minimum threshold requirement.',
+        requiredAmount: MINIMUM_WITHDRAWAL - balance,
       });
-    } else {
-      console.log('API Endpoint Request initiated for payout processing matrix.');
-      alert('Withdrawal request initialized successfully!');
+      return;
+    }
+    if (!upiId?.trim()) {
+      setAlertModal({
+        visible: true,
+        message: 'Please set your UPI ID in Edit Profile before withdrawing.',
+        requiredAmount: 0,
+      });
+      return;
+    }
+    try {
+      await requestWithdrawal({ amount: balance, method: 'upi', upiId });
+      alert('Withdrawal request submitted successfully!');
+    } catch (err) {
+      setError(err?.message || 'Withdrawal failed');
     }
   };
 

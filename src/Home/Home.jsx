@@ -1,5 +1,9 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getPlatformStats } from '../api/platformStats';
+import { getTopUsers } from '../api/leaderboard';
+
+const CHART_COLORS = ['#3B82F6', '#10B981', '#F43F5E', '#6366F1', '#F59E0B', '#A855F7'];
 
 const mockBackendData = {
   Weekly: {
@@ -38,7 +42,7 @@ const mockBackendData = {
     ],
     earners: [
       { id: '#1', name: 'Krishan Kumar', role: 'Content Creator', coins: '120 Coins', rate: '+22.4%' },
-      { id: '#2', name: 'Aman Bhati', textRole: 'Technical Writer', coins: '95 Coins', rate: '+19.8%' },
+      { id: '#2', name: 'Aman Bhati', role: 'Technical Writer', coins: '95 Coins', rate: '+19.8%' },
     ]
   }
 };
@@ -47,11 +51,45 @@ export default function Dashboard() {
   const navigate = useNavigate();
   const [timeframe, setTimeframe] = useState('Weekly');
   const [activeTab, setActiveTab] = useState('Home');
+  const [liveMetrics, setLiveMetrics] = useState(null);
+  const [liveChart, setLiveChart] = useState(null);
+  const [liveEarners, setLiveEarners] = useState(null);
+
+  useEffect(() => {
+    getPlatformStats()
+      .then((stats) => {
+        setLiveMetrics({
+          creators: `${stats.creators}+`,
+          vaults: `${stats.vaults}+`,
+          searches: stats.searches >= 1000 ? `${(stats.searches / 1000).toFixed(1)}K+` : `${stats.searches}+`,
+          earnings: `₹${Math.round(stats.paid).toLocaleString('en-IN')}`,
+        });
+      })
+      .catch(() => {});
+
+    getTopUsers({ period: 'all', limit: 6 })
+      .then((data) => {
+        const entries = data?.entries || [];
+        setLiveChart(entries.slice(0, 4).map((e, i) => ({
+          label: (e.userName || 'User').split(' ')[0],
+          value: e.score ?? 0,
+          color: CHART_COLORS[i % CHART_COLORS.length],
+        })));
+        setLiveEarners(entries.slice(0, 2).map((e) => ({
+          id: `#${e.rank}`,
+          name: e.userName,
+          role: 'Content Creator',
+          coins: `${e.score} Coins`,
+          rate: '',
+        })));
+      })
+      .catch(() => {});
+  }, []);
 
   const activeDataset = mockBackendData[timeframe] || mockBackendData['Weekly'];
-  const metrics = activeDataset.metrics;
-  const chartData = activeDataset.chart;
-  const earnersList = activeDataset.earners;
+  const metrics = liveMetrics || activeDataset.metrics;
+  const chartData = liveChart || activeDataset.chart;
+  const earnersList = liveEarners || activeDataset.earners;
   
   const maxChartValue = Math.max(...chartData.map((d) => d.value), 1);
 

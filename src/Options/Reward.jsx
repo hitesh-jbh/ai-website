@@ -1,18 +1,54 @@
-import React, { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile } from '../api/auth';
+import {
+  getUserPoints,
+  getUserRewards,
+  getRedeemableBalance,
+  requestRedemption,
+} from '../api/rewards';
 
 export default function RewardsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Options');
   const [showErrorModal, setShowErrorModal] = useState(false);
+  const [userProfileUpiId, setUserProfileUpiId] = useState('');
+  const [totalPoints, setTotalPoints] = useState(0);
+  const [availableCoins, setAvailableCoins] = useState(0);
+  const [rewards, setRewards] = useState([]);
+  const [error, setError] = useState('');
 
-  const [userProfileUpiId, setUserProfileUpiId] = useState(''); 
+  useEffect(() => {
+    Promise.all([
+      getProfile(),
+      getUserPoints(),
+      getUserRewards(),
+      getRedeemableBalance().catch(() => null),
+    ])
+      .then(([profile, points, rewardList, redeemable]) => {
+        setUserProfileUpiId(profile?.upiId || '');
+        setTotalPoints(points?.totalPoints ?? 0);
+        setAvailableCoins(redeemable?.redeemableAmount ?? points?.availablePoints ?? 0);
+        setRewards(Array.isArray(rewardList) ? rewardList : []);
+      })
+      .catch((err) => setError(err?.message || 'Failed to load rewards'));
+  }, []);
 
-  const handleRedeemRequest = () => {
-    if (!userProfileUpiId || !userProfileUpiId.trim()) {
+  const handleRedeemRequest = async () => {
+    if (!userProfileUpiId?.trim()) {
       setShowErrorModal(true);
-    } else {
-      alert(`Redemption initialized successfully to destination node address: ${userProfileUpiId}`);
+      return;
+    }
+    const coins = Math.floor(availableCoins);
+    if (coins <= 0) {
+      alert('No redeemable coins available.');
+      return;
+    }
+    try {
+      await requestRedemption({ coins, upiId: userProfileUpiId });
+      alert(`Redemption request submitted for ${coins} coins.`);
+    } catch (err) {
+      setError(err?.message || 'Redemption failed');
     }
   };
 
@@ -95,12 +131,17 @@ export default function RewardsPage() {
       </header>
 
       <main className="max-w-xl mx-auto px-4 pt-6 space-y-5">
+        {error ? (
+          <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+            {error}
+          </div>
+        ) : null}
         
         <div className="w-full bg-[#2563EB] rounded-2xl p-5 text-white shadow-md space-y-1 relative overflow-hidden">
           <div className="absolute top-0 right-0 -mt-4 -mr-4 h-24 w-24 rounded-full bg-white/5 blur-xl pointer-events-none" />
           <span className="text-xs font-bold text-blue-100 uppercase tracking-wider block">Total Points</span>
-          <p className="text-4xl font-black tracking-tight">0</p>
-          <p className="text-xs font-semibold text-blue-100/90 pt-1">Available: 0 coins</p>
+          <p className="text-4xl font-black tracking-tight">{totalPoints}</p>
+          <p className="text-xs font-semibold text-blue-100/90 pt-1">Available: {availableCoins} coins</p>
         </div>
 
         <button
@@ -116,19 +157,33 @@ export default function RewardsPage() {
             Reward History
           </h3>
 
-          <div className="text-center py-16 px-4 bg-white rounded-2xl border border-slate-200/60 shadow-xs space-y-3">
-            <div className="text-slate-300 flex justify-center">
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-16 h-16">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0v11.25m-7.5-6h15" />
-              </svg>
+          {rewards.length === 0 ? (
+            <div className="text-center py-16 px-4 bg-white rounded-2xl border border-slate-200/60 shadow-xs space-y-3">
+              <div className="text-slate-300 flex justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.2} stroke="currentColor" className="w-16 h-16">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 11.25v8.25a1.5 1.5 0 01-1.5 1.5H5.25a1.5 1.5 0 01-1.5-1.5v-8.25M12 4.875A2.625 2.625 0 109.375 7.5H12m0-2.625V7.5m0-2.625A2.625 2.625 0 1114.625 7.5H12m0 0v11.25m-7.5-6h15" />
+                </svg>
+              </div>
+              <div className="space-y-1">
+                <h4 className="text-base font-bold text-slate-800">No rewards yet</h4>
+                <p className="text-xs font-semibold text-slate-400 max-w-[240px] mx-auto leading-relaxed">
+                  Start creating content to earn rewards!
+                </p>
+              </div>
             </div>
-            <div className="space-y-1">
-              <h4 className="text-base font-bold text-slate-800">No rewards yet</h4>
-              <p className="text-xs font-semibold text-slate-400 max-w-[240px] mx-auto leading-relaxed">
-                Start creating content to earn rewards!
-              </p>
+          ) : (
+            <div className="space-y-2">
+              {rewards.map((r) => (
+                <div key={r.id} className="bg-white rounded-xl border border-slate-200/60 p-4 flex justify-between items-center">
+                  <div>
+                    <p className="text-sm font-bold text-slate-800">{r.reason || 'Reward'}</p>
+                    <p className="text-xs text-slate-400">{r.createdAt ? new Date(r.createdAt).toLocaleDateString() : ''}</p>
+                  </div>
+                  <span className="text-sm font-black text-emerald-600">+{r.points} pts</span>
+                </div>
+              ))}
             </div>
-          </div>
+          )}
         </div>
       </main>
 

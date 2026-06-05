@@ -1,28 +1,55 @@
-import React, { useState, useRef } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile, updateProfile, uploadProfilePicture } from '../api/auth';
 
 export default function EditProfile() {
   const navigate = useNavigate();
   const fileInputRef = useRef(null);
   const [activeTab, setActiveTab] = useState('Options');
+  const [pendingFile, setPendingFile] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+  const [error, setError] = useState('');
 
   const [profileImage, setProfileImage] = useState(null);
-  const [name, setName] = useState('ashish');
+  const [name, setName] = useState('');
   const [bio, setBio] = useState('');
   const [upiId, setUpiId] = useState('');
+
+  useEffect(() => {
+    getProfile()
+      .then((user) => {
+        setName(user?.name || '');
+        setBio(user?.bio || '');
+        setUpiId(user?.upiId || '');
+        if (user?.profilePicture) setProfileImage(user.profilePicture);
+      })
+      .catch((err) => setError(err?.message || 'Failed to load profile'));
+  }, []);
 
   const handleImageChange = (e) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
+      setPendingFile(file);
       setProfileImage(URL.createObjectURL(file));
     }
   };
 
-  const handleSave = (e) => {
+  const handleSave = async (e) => {
     e.preventDefault();
-    console.log('API Save Request Payload:', { name, bio, upiId });
-    alert('Profile updates saved successfully!');
-    navigate('/options');
+    setError('');
+    setIsSaving(true);
+    try {
+      if (pendingFile) {
+        const uploaded = await uploadProfilePicture(pendingFile);
+        if (uploaded?.profilePicture) setProfileImage(uploaded.profilePicture);
+      }
+      await updateProfile({ name, bio, upiId });
+      navigate('/options');
+    } catch (err) {
+      setError(err?.message || 'Failed to save profile');
+    } finally {
+      setIsSaving(false);
+    }
   };
 
   const handleTabNavigation = (tabName, path) => {
@@ -107,6 +134,11 @@ export default function EditProfile() {
         <div className="bg-white rounded-3xl border border-slate-200/60 shadow-sm p-6 md:p-8">
           
           <form onSubmit={handleSave} className="space-y-6">
+            {error ? (
+              <div className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+                {error}
+              </div>
+            ) : null}
             
             <div className="flex flex-col items-center justify-center pt-2">
               <div className="relative">
@@ -182,9 +214,10 @@ export default function EditProfile() {
             <div className="space-y-3 pt-2">
               <button 
                 type="submit"
-                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-base shadow-sm shadow-blue-500/10 transition-colors"
+                disabled={isSaving}
+                className="w-full bg-blue-500 hover:bg-blue-600 text-white font-bold py-4 rounded-xl text-base shadow-sm shadow-blue-500/10 transition-colors disabled:opacity-60"
               >
-                Save Changes
+                {isSaving ? 'Saving…' : 'Save Changes'}
               </button>
               
               <button 

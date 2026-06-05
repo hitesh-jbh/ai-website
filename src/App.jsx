@@ -1,5 +1,7 @@
-import React, { useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { getAccessToken } from './auth/tokenStorage';
+import { getCurrentSubscriptionStatus } from './api/subscription';
 import Login from './login/Login';
 import Register from './login/Register';
 import ForgotPassword from './login/Forget';
@@ -22,10 +24,16 @@ import './App.css';
 function App() {
   const [hasPlan, setHasPlan] = useState(false);
 
-  const handlePlanActivation = (planId) => {
-    console.log(`Plan activated: ${planId}`);
-    setHasPlan(true); 
-  };
+  useEffect(() => {
+    if (!getAccessToken()) return;
+    getCurrentSubscriptionStatus()
+      .then((data) => setHasPlan(Boolean(data?.hasSubscription)))
+      .catch(() => setHasPlan(false));
+  }, []);
+
+  const handlePlanActivation = useCallback(() => {
+    setHasPlan(true);
+  }, []);
 
   return (
     <Router>
