@@ -27,12 +27,20 @@ export default function Register() {
     }));
   };
 
+  const passwordLength = formData.password?.length || 0;
+  const isPasswordValid = passwordLength >= 8;
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
 
     if (formData.password !== formData.confirmPassword) {
       alert('Passwords do not match!');
+      return;
+    }
+
+    if (!isPasswordValid) {
+      setError('Password must be at least 8 characters');
       return;
     }
 
@@ -157,6 +165,19 @@ export default function Register() {
                   </svg>
                 )}
               </button>
+            </div>
+            <div className="mt-2">
+              <div className="w-full rounded-full bg-[#E6EEF8] h-2">
+                <div
+                  className={`h-2 rounded-full transition-all ${isPasswordValid ? 'bg-emerald-500' : 'bg-rose-500'}`}
+                  style={{ width: `${Math.min(passwordLength, 8) / 8 * 100}%` }}
+                />
+              </div>
+              {!isPasswordValid ? (
+                <p className="mt-1 text-sm text-rose-600">Password must be at least 8 characters</p>
+              ) : (
+                <p className="mt-1 text-sm text-emerald-600">Good password length</p>
+              )}
             </div>
           </div>
 

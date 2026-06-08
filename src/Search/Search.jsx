@@ -27,6 +27,7 @@ export default function SearchPage({ onChangePlan }) {
   const messagesEndRef = useRef(null);
   const fileInputRef = useRef(null);
   const threadIdRef = useRef(null);
+  const idCounterRef = useRef(0);
 
   useEffect(() => {
     getSearchHistory({ limit: 10 })
@@ -105,7 +106,7 @@ export default function SearchPage({ onChangePlan }) {
     if (!text.trim()) return;
     
     const userMsg = { 
-      id: Date.now(), 
+      id: `msg-${++idCounterRef.current}`,
       sender: 'user', 
       text, 
       depth: answerDepth 
@@ -126,7 +127,7 @@ export default function SearchPage({ onChangePlan }) {
         ? result.answer
         : JSON.stringify(result?.answer ?? result, null, 2);
       const aiMsg = {
-        id: Date.now() + 1,
+        id: `msg-${++idCounterRef.current}`,
         sender: 'ai',
         text: answer,
         depth: answerDepth,
