@@ -60,13 +60,7 @@ function App() {
         
         <Route 
           path="/subscriptions" 
-          element={
-            hasPlan ? (
-              <Navigate to="/search" replace />
-            ) : (
-              <ManageSubscriptions onPlanSelect={handlePlanActivation} />
-            )
-          } 
+          element={<ManageSubscriptions onPlanSelect={handlePlanActivation} />} 
         />
       </Routes>
     </Router>

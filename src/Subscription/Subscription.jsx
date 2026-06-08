@@ -163,7 +163,6 @@ export default function ManageSubscriptions({ onPlanSelect }) {
         if (!mounted) return;
         if (statusRes.status === 'fulfilled') {
           setStatus(statusRes.value);
-          if (statusRes.value?.hasSubscription) onPlanSelect('active');
         } else {
           setError(statusRes.reason?.message || 'Failed to load subscription');
         }
