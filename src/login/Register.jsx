@@ -56,6 +56,7 @@ export default function Register() {
       if (data?.accessToken && data?.refreshToken) {
         setTokenPair(data);
       }
+      window.dispatchEvent(new Event('auth:changed'));
       navigate('/home');
     } catch (err) {
       setError(err?.message || 'Registration failed');

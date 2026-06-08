@@ -28,6 +28,7 @@ export default function OptionsPage() {
 
   const handleLogout = () => {
     clearTokens();
+    window.dispatchEvent(new Event('auth:changed'));
     navigate('/');
   };
 
