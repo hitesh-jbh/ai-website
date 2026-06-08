@@ -8,6 +8,7 @@ import {
   followVault,
   unfollowVault,
 } from '../api/vault';
+import { getProfile } from '../api/auth';
 
 function mapVaultItem(v) {
   return {
@@ -53,12 +54,24 @@ export default function VaultsPage() {
   const [activeTab, setActiveTab] = useState('Vaults');
   const [isCreating, setIsCreating] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState('');
-  
+  const [error, setError] = useState('');  
   const [vaults, setVaults] = useState([]);
   
   const [savedFeed, setSavedFeed] = useState([]);
   const [followedFeed, setFollowedFeed] = useState([]);
+
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getProfile()
+      .then((data) => setUser(data?.user || data))
+      .catch(() => setUser(null));
+  }, []);
+
+  const userName = (user?.name || '').trim();
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : 'U';
+  const userAvatar = user?.profilePicture || null;
+  const userPhone = user?.phone || user?.mobile || user?.contact || '';
 
   const [formFields, setFormFields] = useState({
     title: '',
@@ -332,13 +345,17 @@ export default function VaultsPage() {
 
             <div className="bg-white rounded-3xl p-6 border border-slate-200/60 shadow-xs space-y-5">
               <div className="flex items-center gap-4">
-                <div className="h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-md">
-                  A
+                <div data-testid="vault-profile-avatar" className="h-16 w-16 bg-gradient-to-br from-blue-500 to-indigo-600 rounded-2xl flex items-center justify-center font-black text-2xl text-white shadow-md overflow-hidden">
+                  {userAvatar ? (
+                    <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
+                  ) : (
+                    userInitial
+                  )}
                 </div>
                 <div>
-                  <h2 className="text-lg font-black text-slate-900 tracking-tight uppercase">ASHISH</h2>
+                  <h2 data-testid="vault-profile-name" className="text-lg font-black text-slate-900 tracking-tight uppercase">{userName || 'User'}</h2>
                   <p className="text-xs font-bold text-slate-400 mt-1 flex items-center gap-1">
-                    <span>📞</span> 9625181162
+                    <span>📞</span> {userPhone || '—'}
                   </p>
                 </div>
               </div>

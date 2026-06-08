@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile } from '../api/auth';
+import { clearTokens } from '../auth/tokenStorage';
 
 export default function OptionsPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Options');
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getProfile()
+      .then((data) => setUser(data?.user || data))
+      .catch(() => setUser(null));
+  }, []);
+
+  const displayName = (user?.name || '').trim();
+  const initial = displayName ? displayName.charAt(0).toUpperCase() : '?';
 
   const menuOptions = [
     { label: 'Edit Profile', path: '/edit-profile' },
@@ -15,6 +27,8 @@ export default function OptionsPage() {
   ];
 
   const handleLogout = () => {
+    clearTokens();
+    window.dispatchEvent(new Event('auth:changed'));
     navigate('/');
   };
 
@@ -95,9 +109,9 @@ export default function OptionsPage() {
           </nav>
 
           <div className="hidden md:flex items-center gap-3">
-            <span className="text-sm font-bold text-slate-700">ASHISH</span>
-            <div className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-300">
-              A
+            <span data-testid="header-username" className="text-sm font-bold text-slate-700 uppercase">{displayName || 'User'}</span>
+            <div data-testid="header-avatar" className="h-10 w-10 rounded-full bg-slate-200 flex items-center justify-center text-slate-600 font-bold border border-slate-300">
+              {initial}
             </div>
           </div>
         </div>
@@ -108,13 +122,25 @@ export default function OptionsPage() {
           
           <div className="flex flex-col items-center text-center space-y-3">
             <div className="relative group">
-              <div className="h-28 w-28 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-slate-400 shadow-inner transition-transform duration-300 group-hover:scale-102">
-                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-14 h-14">
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
-                </svg>
+              <div className="h-28 w-28 rounded-full bg-slate-200 border-2 border-white flex items-center justify-center text-slate-500 shadow-inner transition-transform duration-300 group-hover:scale-102 overflow-hidden">
+                {user?.profilePicture ? (
+                  <img
+                    src={user.profilePicture}
+                    alt={displayName}
+                    className="h-full w-full object-cover"
+                  />
+                ) : displayName ? (
+                  <span data-testid="profile-initial" className="text-4xl font-black text-slate-500">
+                    {initial}
+                  </span>
+                ) : (
+                  <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="w-14 h-14">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M15.75 6a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0zM4.501 20.118a7.5 7.5 0 0114.998 0A17.933 17.933 0 0112 21.75c-2.676 0-5.216-.584-7.499-1.632z" />
+                  </svg>
+                )}
               </div>
             </div>
-            <h2 className="text-xl font-black text-slate-900 uppercase tracking-wide">ASHISH</h2>
+            <h2 data-testid="profile-name" className="text-xl font-black text-slate-900 uppercase tracking-wide">{displayName || 'User'}</h2>
           </div>
 
           <div className="w-full border-t border-slate-100 pt-2 divide-y divide-slate-100">

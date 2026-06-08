@@ -25,10 +25,19 @@ function App() {
   const [hasPlan, setHasPlan] = useState(false);
 
   useEffect(() => {
-    if (!getAccessToken()) return;
-    getCurrentSubscriptionStatus()
-      .then((data) => setHasPlan(Boolean(data?.hasSubscription)))
-      .catch(() => setHasPlan(false));
+    const checkStatus = () => {
+      if (!getAccessToken()) {
+        setHasPlan(false);
+        return;
+      }
+      getCurrentSubscriptionStatus()
+        .then((data) => setHasPlan(Boolean(data?.hasSubscription)))
+        .catch(() => setHasPlan(false));
+    };
+
+    checkStatus();
+    window.addEventListener('auth:changed', checkStatus);
+    return () => window.removeEventListener('auth:changed', checkStatus);
   }, []);
 
   const handlePlanActivation = useCallback(() => {
@@ -60,13 +69,7 @@ function App() {
         
         <Route 
           path="/subscriptions" 
-          element={
-            hasPlan ? (
-              <Navigate to="/search" replace />
-            ) : (
-              <ManageSubscriptions onPlanSelect={handlePlanActivation} />
-            )
-          } 
+          element={<ManageSubscriptions onPlanSelect={handlePlanActivation} />} 
         />
       </Routes>
     </Router>

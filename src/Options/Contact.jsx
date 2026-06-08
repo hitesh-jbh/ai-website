@@ -1,9 +1,21 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { getProfile } from '../api/auth';
 
 export default function ContactPage() {
   const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState('Options');
+  const [user, setUser] = useState(null);
+  const [error, setError] = useState('');
+
+  useEffect(() => {
+    getProfile()
+      .then((data) => setUser(data?.user || data))
+      .catch((err) => setError(err?.message || 'Failed to load contact info'));
+  }, []);
+
+  const email = user?.email || '';
+  const phone = user?.phone || user?.mobile || user?.contact || '';
 
   const handleTabNavigation = (tabName, path) => {
     setActiveTab(tabName);
@@ -90,6 +102,12 @@ export default function ContactPage() {
             Your Contact Information
           </h2>
 
+          {error ? (
+            <div data-testid="contact-error" className="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-700">
+              {error}
+            </div>
+          ) : null}
+
           <div className="space-y-3">
             
             <div className="w-full flex items-center gap-4 p-4 rounded-2xl bg-white border border-slate-200/40 shadow-xs">
@@ -100,8 +118,8 @@ export default function ContactPage() {
               </div>
               <div className="min-w-0">
                 <span className="block text-xs font-bold text-slate-400">Email</span>
-                <p className="text-sm md:text-base font-bold text-slate-800 tracking-tight select-all truncate mt-0.5">
-                  ashishsingh0828@gmail.com
+                <p data-testid="contact-email" className="text-sm md:text-base font-bold text-slate-800 tracking-tight select-all truncate mt-0.5">
+                  {email || '—'}
                 </p>
               </div>
             </div>
@@ -114,8 +132,8 @@ export default function ContactPage() {
               </div>
               <div className="min-w-0">
                 <span className="block text-xs font-bold text-slate-400">Mobile number</span>
-                <p className="text-sm md:text-base font-bold text-slate-800 tracking-tight select-all mt-0.5">
-                  9625181162
+                <p data-testid="contact-phone" className="text-sm md:text-base font-bold text-slate-800 tracking-tight select-all mt-0.5">
+                  {phone || '—'}
                 </p>
               </div>
             </div>
