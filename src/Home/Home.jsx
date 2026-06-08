@@ -2,6 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { getPlatformStats } from '../api/platformStats';
 import { getTopUsers } from '../api/leaderboard';
+import { getProfile } from '../api/auth';
 
 const CHART_COLORS = ['#3B82F6', '#10B981', '#F43F5E', '#6366F1', '#F59E0B', '#A855F7'];
 
@@ -54,6 +55,17 @@ export default function Dashboard() {
   const [liveMetrics, setLiveMetrics] = useState(null);
   const [liveChart, setLiveChart] = useState(null);
   const [liveEarners, setLiveEarners] = useState(null);
+  const [user, setUser] = useState(null);
+
+  useEffect(() => {
+    getProfile()
+      .then((data) => setUser(data?.user || data))
+      .catch(() => setUser(null));
+  }, []);
+
+  const userName = (user?.name || '').trim();
+  const userInitial = userName ? userName.charAt(0).toUpperCase() : 'U';
+  const userAvatar = user?.profilePicture || null;
 
   useEffect(() => {
     getPlatformStats()
@@ -175,11 +187,16 @@ export default function Dashboard() {
           </button>
           
           <div 
+            data-testid="home-header-avatar"
             onClick={() => navigate('/options')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-bold text-white shadow-md shadow-blue-500/20 cursor-pointer hover:scale-102 transition-transform"
-            title="Account Options"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-bold text-white shadow-md shadow-blue-500/20 cursor-pointer hover:scale-102 transition-transform overflow-hidden"
+            title={userName ? `Account – ${userName}` : 'Account Options'}
           >
-            A
+            {userAvatar ? (
+              <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
+            ) : (
+              userInitial
+            )}
           </div>
         </div>
       </header>
@@ -192,10 +209,15 @@ export default function Dashboard() {
             <p className="text-xs font-medium text-slate-400 mt-0.5">Global Creator Framework</p>
           </div>
           <div 
+            data-testid="home-mobile-avatar"
             onClick={() => navigate('/options')}
-            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-bold text-white cursor-pointer active:scale-95 transition-transform"
+            className="flex h-10 w-10 items-center justify-center rounded-xl bg-gradient-to-br from-blue-500 to-indigo-600 font-bold text-white cursor-pointer active:scale-95 transition-transform overflow-hidden"
           >
-            A
+            {userAvatar ? (
+              <img src={userAvatar} alt={userName} className="h-full w-full object-cover" />
+            ) : (
+              userInitial
+            )}
           </div>
         </div>
 
