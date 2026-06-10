@@ -21,6 +21,13 @@ export function forgotPassword({ email }) {
   });
 }
 
+export function resetPassword({ email, otp, newPassword }) {
+  return apiRequest("auth/reset-password", {
+    method: "POST",
+    body: { email, otp, newPassword },
+  });
+}
+
 export function getProfile() {
   return apiRequest("auth/profile", { auth: true });
 }

@@ -1,9 +1,16 @@
-import React, { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useState } from 'react';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { resetPassword } from '../api/auth';
 
 export default function ResetPassword() {
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const initialEmail = searchParams.get('email') || '';
+  const initialOtp = searchParams.get('otp') || '';
+
   const [formData, setFormData] = useState({
+    email: initialEmail,
+    otp: initialOtp,
     password: '',
     confirmPassword: '',
   });
@@ -15,17 +22,26 @@ export default function ResetPassword() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (formData.password !== formData.confirmPassword) {
-      alert("Passwords do not match!");
+      alert('Passwords do not match!');
       return;
     }
 
-    console.log('Reset Password Security Trigger Payload:', { password: formData.password });
-    alert('Your account password has been updated successfully!');
-    navigate('/');
+    try {
+      await resetPassword({
+        email: formData.email,
+        otp: formData.otp,
+        newPassword: formData.password,
+      });
+
+      alert('Your account password has been updated successfully!');
+      navigate('/');
+    } catch (err) {
+      alert(err?.message || 'Reset failed');
+    }
   };
 
   return (
@@ -42,7 +58,20 @@ export default function ResetPassword() {
         </div>
 
         <form onSubmit={handleSubmit} className="mt-8 space-y-6">
-          
+
+          <div className="space-y-2">
+            <label className="block text-base font-bold text-[#1E293B]">OTP <span className="text-[#EF4444]">*</span></label>
+            <input
+              type="text"
+              required
+              name="otp"
+              value={formData.otp}
+              onChange={(e) => setFormData({ ...formData, otp: e.target.value })}
+              placeholder="Enter OTP"
+              className="block w-full rounded-xl border-0 bg-[#F1F5F9] px-4 py-4 text-base text-[#1E293B] placeholder-[#94A3B8] focus:bg-white focus:outline-none focus:ring-2 focus:ring-[#3B82F6] transition-colors font-medium"
+            />
+          </div>
+
           <div className="space-y-2">
             <label htmlFor="password" className="block text-base font-bold text-[#1E293B]">
               New Password <span className="text-[#EF4444]">*</span>
