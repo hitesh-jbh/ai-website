@@ -85,6 +85,14 @@ export default function ForgotPassword() {
             <p className="text-sm text-[#94A3B8] font-semibold">
               You can safely close this window or return to login below.
             </p>
+            <div>
+              <Link
+                to={`/reset-password?email=${encodeURIComponent(email)}`}
+                className="inline-flex mt-3 items-center justify-center rounded-xl bg-green-600 hover:bg-green-700 px-4 py-3 text-base font-bold text-white shadow-md shadow-green-500/10 transition-colors"
+              >
+                Reset Password Now
+              </Link>
+            </div>
           </div>
         )}
 
