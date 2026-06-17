@@ -20,6 +20,8 @@ import WalletPage from './Options/Wallet';
 import RewardsPage from './Options/Reward';
 
 import './App.css';
+import AddResource from './Home/AdSense/AdSense';
+import AdSlot from './Home/AdSense/AdRender';
 
 function App() {
   const [hasPlan, setHasPlan] = useState(false);
@@ -54,7 +56,8 @@ function App() {
         <Route path="/home" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/vault" element={<VaultsPage />} />
-        
+          <Route path="/adsense" element={<AddResource />} />
+         <Route path="/adrender" element={<AdSlot />} />
         <Route path="/options" element={<OptionsPage />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/contact" element={<ContactPage />} />
