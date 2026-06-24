@@ -20,6 +20,8 @@ import WalletPage from './Options/Wallet';
 import RewardsPage from './Options/Reward';
 
 import './App.css';
+import AddResource from "./Home/adsense/AdSense";
+import AdSlot from "./Home/adsense/AdRender";
 
 function App() {
   const [hasPlan, setHasPlan] = useState(false);
@@ -54,7 +56,8 @@ function App() {
         <Route path="/home" element={<Dashboard />} />
         <Route path="/leaderboard" element={<Leaderboard />} />
         <Route path="/vault" element={<VaultsPage />} />
-        
+        <Route path="/adsense" element={<AddResource />} />
+        <Route path="/adrender" element={<AdSlot />} />
         <Route path="/options" element={<OptionsPage />} />
         <Route path="/edit-profile" element={<EditProfile />} />
         <Route path="/contact" element={<ContactPage />} />
@@ -62,9 +65,10 @@ function App() {
         <Route path="/wallet" element={<WalletPage />} />
         <Route path="/rewards" element={<RewardsPage />} />
         
+        {/* Allows the search page to load, passing the plan status */}
         <Route 
           path="/search" 
-          element={hasPlan ? <SearchPage onChangePlan={() => setHasPlan(false)} /> : <Navigate to="/subscriptions" replace />} 
+          element={<SearchPage hasSubscriptionPlan={hasPlan} onChangePlan={() => setHasPlan(false)} />} 
         />
         
         <Route 
