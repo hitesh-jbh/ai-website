@@ -60,6 +60,8 @@ export async function openRazorpayCheckout({
   plan,
   prefill = {},
   themeColor = "#3B82F6",
+  description,
+  notes,
 }) {
   await loadRazorpaySdk();
 
@@ -69,16 +71,16 @@ export async function openRazorpayCheckout({
       amount: order.amount,
       currency: order.currency || "INR",
       name: "KnowVaults",
-      description: plan?.name ? `${plan.name} Subscription` : "Subscription",
+      description:
+        description ||7
+        (plan?.name ? `${plan.name} Subscription` : "Subscription"),
       order_id: order.id,
       prefill: {
         name: prefill.name || "",
         email: prefill.email || "",
         contact: prefill.contact || "",
       },
-      notes: {
-        planType: plan?.planType || "",
-      },
+      notes: notes || { planType: plan?.planType || "" },
       theme: { color: themeColor },
       handler: (response) => {
         resolve({

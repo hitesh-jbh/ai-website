@@ -179,6 +179,15 @@ export default function Dashboard() {
         </nav>
 
         <div className="flex items-center gap-4">
+          {/* Plans button placed right before the notification and avatar */}
+          <button 
+            onClick={() => navigate('/subscriptions')} 
+            className="text-xs font-bold tracking-wide uppercase bg-gradient-to-r from-amber-500/10 to-amber-600/5 hover:from-amber-500/20 hover:to-amber-600/10 text-slate-900 border border-amber-500/30 px-3.5 py-2 rounded-xl shadow-sm transition-all duration-200 flex items-center gap-2 active:scale-98"
+          >
+            <span className="text-sm">👑</span>
+            <span>Upgrade Plan</span>
+          </button>
+
           <button className="relative rounded-xl p-2 text-slate-400 hover:bg-slate-50 hover:text-slate-600 transition-colors">
             <span className="absolute top-2 right-2 h-2 w-2 rounded-full bg-rose-500" />
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="w-5 h-5">

@@ -6,9 +6,9 @@ import {
   mapAiPreference,
   submitCommunityAnswer,
 } from "../api/search";
-import { createThread } from "../api/thread";
+import { createThread, getThreadMessages } from "../api/thread";
 
-export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
+export default function SearchPage({ hasSubscriptionPlan }) {
   const navigate = useNavigate();
   const [searchQuery, setSearchQuery] = useState("");
   const [answerDepth, setAnswerDepth] = useState("Balanced");
@@ -37,7 +37,8 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
   const threadIdRef = useRef(null);
   const idCounterRef = useRef(0);
 
-  useEffect(() => {
+  // 1. We wrap it in a reusable function so we can trigger it anytime
+  const fetchRecentHistory = () => {
     getSearchHistory({ limit: 10 })
       .then((history) => {
         const list = Array.isArray(history) ? history : [];
@@ -50,31 +51,70 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
         );
       })
       .catch(() => {});
+  };
+
+  useEffect(() => {
+    fetchRecentHistory();
   }, []);
 
   const ensureThreadId = async () => {
     if (threadIdRef.current) return threadIdRef.current;
-    const response = await createThread();
-    // Updated to match your exact backend nested data object schema structure
-    threadIdRef.current = response?.data?.threadId;
-    return threadIdRef.current;
+
+    try {
+      const response = await createThread();
+      console.log("RAW THREAD RESPONSE:", response); // Check F12 console to see exactly what comes back
+
+      // This checks every possible way the backend might wrap the ID
+      const extractedId =
+        response?.data?.threadId ||
+        response?.threadId ||
+        response?.data?.data?.threadId;
+
+      if (extractedId) {
+        threadIdRef.current = extractedId;
+      }
+
+      return threadIdRef.current;
+    } catch (error) {
+      console.error("Error creating thread:", error);
+      return undefined;
+    }
   };
 
   const runSearch = async (query) => {
     setSearchError("");
     setIsLoading(true);
+
+    // Note: If you want chat messages to append instead of wiping the screen,
+    // you might need to remove or change this setAiAnswerMarkdown("") line later.
     setAiAnswerMarkdown("");
+
     try {
-      const threadId = await ensureThreadId();
+      // 1. Try to get the ID from the function
+      let threadId = await ensureThreadId();
+
+      // 2. Fallback: If it returns undefined, force it to use the active ref
+      if (
+        !threadId &&
+        typeof threadIdRef !== "undefined" &&
+        threadIdRef.current
+      ) {
+        threadId = threadIdRef.current;
+      }
+
+      console.log("SENDING TO BACKEND WITH THREAD ID:", threadId);
+
       const result = await searchApi({
         query,
         threadId,
         aiPreference: mapAiPreference(answerDepth),
       });
+
       const answer =
         typeof result?.answer === "string"
           ? result.answer
           : JSON.stringify(result?.answer ?? result, null, 2);
+
       setAiAnswerMarkdown(answer);
     } catch (err) {
       if (err?.status === 402 || err?.payload?.requiresSubscription) {
@@ -101,10 +141,48 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
     runSearch(searchQuery.trim());
   };
 
-  const handleRecentSearchClick = (query) => {
-    setSearchQuery(query);
-    setViewMode("results");
-    runSearch(query);
+  const handleRecentSearchClick = async (historyItem) => {
+    // 1. Switch to chat view and lock the ID
+    setViewMode("chat");
+    threadIdRef.current = historyItem.id;
+    setSearchQuery("");
+    
+    // 2. Turn on the loading spinner so the user knows it's fetching
+    setIsLoading(true);
+    setSearchError("");
+
+    try {
+      // 3. Fetch the past messages from your backend
+      const response = await getThreadMessages(historyItem.id);
+      
+      // Note: Check your F12 console to see exactly what 'response' looks like!
+      console.log("FETCHED THREAD HISTORY:", response);
+
+      // Extract the messages array (adjust 'response.data.messages' to match your backend's exact JSON structure)
+      const pastMessages = response?.data?.messages || response?.messages || [];
+
+      // 4. Map the backend data into the exact format your React frontend expects
+      const formattedMessages = pastMessages.map((msg, index) => ({
+        id: msg.id || `restored-msg-${index}`,
+        // Adjust these keys based on what your backend actually returns (e.g., 'role', 'sender', 'isUser')
+        sender: msg.role === "user" || msg.sender === "user" ? "user" : "ai", 
+        text: msg.content || msg.text || msg.answer,
+        depth: msg.depth || answerDepth,
+        associatedQuestion: msg.associatedQuestion || "",
+      }));
+
+      // 5. Put the historical messages on the screen!
+      setMessages(formattedMessages);
+      
+      // 6. Make sure the ID counter doesn't reset and overwrite old messages
+      idCounterRef.current = formattedMessages.length;
+      
+    } catch (error) {
+      console.error("Failed to load past messages:", error);
+      setSearchError("Could not load chat history.");
+    } finally {
+      setIsLoading(false);
+    }
   };
 
   const executeChatMsg = async (text) => {
@@ -122,16 +200,30 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
     setSearchError("");
 
     try {
-      const threadId = await ensureThreadId();
+      // THE PATCHED THREAD ID LOGIC IS HERE
+      let threadId = await ensureThreadId();
+
+      if (
+        !threadId &&
+        typeof threadIdRef !== "undefined" &&
+        threadIdRef.current
+      ) {
+        threadId = threadIdRef.current;
+      }
+
+      console.log("CHAT MSG SENDING WITH ID:", threadId);
+
       const result = await searchApi({
         query: text,
         threadId,
         aiPreference: mapAiPreference(answerDepth),
       });
+
       const answer =
         typeof result?.answer === "string"
           ? result.answer
           : JSON.stringify(result?.answer ?? result, null, 2);
+
       const aiMsg = {
         id: `msg-${++idCounterRef.current}`,
         sender: "ai",
@@ -140,6 +232,7 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
         associatedQuestion: text,
       };
       setMessages((prev) => [...prev, aiMsg]);
+      fetchRecentHistory();
     } catch (err) {
       setSearchError(err?.message || "Search failed");
     } finally {
@@ -311,14 +404,6 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
 
         <div className="flex items-center gap-4 text-blue-500 relative">
           <button
-            onClick={onChangePlan}
-            className="text-xs font-bold bg-slate-100 px-3 py-1.5 rounded-xl hover:bg-slate-200 transition-colors text-slate-700 flex items-center gap-1"
-          >
-            <span>Plans</span> 👑
-          </button>
-
-          {/* REPLACED THE 3 REDUNDANT ICONS WITH A SINGLE NEW CHAT ACTION BUTTON */}
-          <button
             onClick={async () => {
               try {
                 // 1. Call your imported createThread API method
@@ -404,8 +489,15 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
                   }}
                   className="w-full bg-transparent border-0 pl-3 pr-12 text-base text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-0"
                 />
+
                 <button
-                  type="submit"
+                  type="button"
+                  onClick={() => {
+                    if (searchQuery.trim() !== "") {
+                      executeChatMsg(searchQuery); // Changed to executeChatMsg
+                      setSearchQuery(""); // Clears the box after sending
+                    }
+                  }}
                   className="absolute right-3 p-2 rounded-xl bg-blue-500/10 text-blue-600 hover:bg-blue-50 hover:text-white transition-all"
                 >
                   <svg
@@ -483,7 +575,7 @@ export default function SearchPage({ onChangePlan, hasSubscriptionPlan }) {
                 {recentSearches.map((search) => (
                   <button
                     key={search.id}
-                    onClick={() => handleRecentSearchClick(search.query)}
+                    onClick={() => handleRecentSearchClick(search)}
                     className="w-full flex items-center justify-between text-left p-4 rounded-2xl bg-[#F8FAFC] border border-slate-100 hover:bg-slate-50 hover:border-slate-200 group transition-all"
                   >
                     <div className="space-y-1">
