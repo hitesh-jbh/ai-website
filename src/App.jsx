@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { BrowserRouter as Router, Routes, Route} from 'react-router-dom';
 import { getAccessToken } from './auth/tokenStorage';
 import { getCurrentSubscriptionStatus } from './api/subscription';
 import Login from './login/Login';
@@ -7,7 +7,8 @@ import Register from './login/Register';
 import ForgotPassword from './login/Forget';
 import ResetPassword from './login/Reset';
 import Dashboard from './Home/Home';
-import SearchPage from './Search/Search';
+import SearchPage from './Search/SearchPage';
+import ChatPage from './Search/ChatPage';
 import ManageSubscriptions from './Subscription/Subscription';
 import Leaderboard from './Leaderboard/Leaderboard';
 import VaultsPage from './Vault/Vault';
@@ -33,17 +34,28 @@ function App() {
         return;
       }
       getCurrentSubscriptionStatus()
-        .then((data) => setHasPlan(Boolean(data?.hasSubscription)))
+        .then((data) => {
+          // 1. Log the data so you can see exactly what your backend returns
+          console.log("Backend Plan Data:", data); 
+
+          
+          const hasAnyValidPlan = 
+            data?.hasSubscription === true || 
+            data?.planType === 'free' || 
+            data?.plan === 'free'; 
+
+          setHasPlan(Boolean(hasAnyValidPlan));
+        })
         .catch(() => setHasPlan(false));
     };
 
     checkStatus();
     window.addEventListener('auth:changed', checkStatus);
     return () => window.removeEventListener('auth:changed', checkStatus);
-  }, []);
+  }, []); 
 
   const handlePlanActivation = useCallback(() => {
-    setHasPlan(true);
+    setHasPlan(true); 
   }, []);
 
   return (
@@ -65,10 +77,10 @@ function App() {
         <Route path="/wallet" element={<WalletPage />} />
         <Route path="/rewards" element={<RewardsPage />} />
         
-        <Route 
-          path="/search" 
-          element={hasPlan ? <SearchPage onChangePlan={() => setHasPlan(false)} /> : <Navigate to="/subscriptions" replace />} 
-        />
+        {/* Allows the search page to load, passing the plan status */}
+        <Route path="/search" element={<SearchPage hasSubscriptionPlan={hasPlan} />} />
+        <Route path="/chat" element={<ChatPage hasSubscriptionPlan={hasPlan} />} />
+        <Route path="/chat/:threadId" element={<ChatPage hasSubscriptionPlan={hasPlan} />} />
         
         <Route 
           path="/subscriptions" 

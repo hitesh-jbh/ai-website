@@ -15,6 +15,10 @@ export function getFollowedVaults({ limit = 20, offset = 0 } = {}) {
   return apiRequest(`vaults/followed?${qs}`, { auth: true });
 }
 
+export function getVaultById(vaultId) {
+  return apiRequest(`vaults/by-id/${vaultId}`, { auth: true });
+}
+
 export function createVault({ title, description, summary, name, email, mobileNumber }) {
   return apiRequest("vaults", {
     method: "POST",

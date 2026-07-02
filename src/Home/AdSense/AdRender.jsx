@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 
 export default function AdSlot({ adType = "banner", adUnitId = "demo-id-456" }) {
   const [loading, setLoading] = useState(true);

@@ -35,3 +35,29 @@ export function verifyPayment({
     },
   });
 }
+
+export function createExpertContactOrder(vaultId) {
+  return apiRequest("payments/create-contact-expert-order", {
+    method: "POST",
+    auth: true,
+    body: { vaultId },
+  });
+}
+
+export function unlockExpertContact({
+  vaultId,
+  razorpayOrderId,
+  razorpayPaymentId,
+  razorpaySignature,
+}) {
+  return apiRequest("payments/unlock-contact", {
+    method: "POST",
+    auth: true,
+    body: {
+      vaultId,
+      razorpayOrderId,
+      razorpayPaymentId,
+      razorpaySignature,
+    },
+  });
+}
